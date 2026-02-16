@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+package-lock.json
+client/node_modules/
+client/package-lock.json
+
+# Data
+data/*
+!data/.gitkeep
+# Session data
+data/user-sessions.csv
+
+# Logs
+logs/*
+!logs/.gitkeep
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDEs and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build outputs
+dist/
+build/
+client/dist/
+
+# Temporary files
+tmp/
+temp/
+*.tmp

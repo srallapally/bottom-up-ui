@@ -1,0 +1,46 @@
+{
+  "name": "bottom-up-ui",
+  "version": "1.0.0",
+  "description": "Role Mining UI - Express + Vue application for IGA role mining",
+  "main": "server/server.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
+    "server:dev": "nodemon server/server.js",
+    "server:start": "node server/server.js",
+    "client:dev": "cd client && npm run dev",
+    "client:build": "cd client && npm run build",
+    "install:all": "npm install && cd client && npm install",
+    "lint": "eslint server/**/*.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "role-mining",
+    "IGA",
+    "identity-governance"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.13.5",
+    "cors": "^2.8.6",
+    "csv-parser": "^3.2.0",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "http-proxy-middleware": "^3.0.5",
+    "passport": "^0.7.0",
+    "passport-openidconnect": "^0.1.2",
+    "passport-oauth2": "^1.6.1",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "eslint": "^10.0.0",
+    "nodemon": "^3.1.11"
+  }
+}
