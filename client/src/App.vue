@@ -1,6 +1,7 @@
 <template>
   <div id="app">
-    <header class="bg-primary text-white py-3 mb-4">
+  	<AppHeader />
+    <!-- header class="bg-primary text-white py-3 mb-4">
       <div class="container">
         <div class="d-flex justify-content-between align-items-center">
           <div>
@@ -13,7 +14,7 @@
           </div>
         </div>
       </div>
-    </header>
+    </header -->
 
     <!-- Navigation breadcrumb -->
     <div class="container mb-3" v-if="showBreadcrumb">
@@ -40,21 +41,23 @@
         </transition>
       </router-view>
     </main>
-
-    <footer class="container mt-5 py-4 text-center text-muted border-top">
+	<AppFooter />
+    <!-- footer class="container mt-5 py-4 text-center text-muted border-top">
       <small>
         Vue {{ vueVersion }} • Environment: {{ environment }}
         <span v-if="sessionStore.hasSession" class="ms-3">
           Session: {{ sessionStore.sessionId.slice(0, 8) }}
         </span>
       </small>
-    </footer>
+    </footer -->
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import AppHeader from '@/components/layout/AppHeader.vue';
+import AppFooter from '@/components/layout/AppFooter.vue';
 import { version } from 'vue';
 import { useAuthStore } from '@/stores/auth';
 import { useSessionStore } from '@/stores/session';
