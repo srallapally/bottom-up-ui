@@ -1,24 +1,19 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import router from './router';
+import App from './App.vue';
 
-// Bootstrap CSS and JS
-import 'bootstrap/dist/css/bootstrap.min.css'
-import 'bootstrap'
-
-// AG Grid styles
-import 'ag-grid-community/styles/ag-grid.css'
-import 'ag-grid-community/styles/ag-theme-alpine.css'
+// Bootstrap CSS
+import 'bootstrap/dist/css/bootstrap.min.css';
+// Bootstrap JS (for toast notifications)
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 // Custom styles
-import './assets/styles/main.css'
+import './assets/styles/main.css';
 
-const app = createApp(App)
+const app = createApp(App);
+const pinia = createPinia();
 
-// Install Pinia for state management
-app.use(createPinia())
-
-// Router will be added in Phase 2
-// app.use(router)
-
-app.mount('#app')
+app.use(pinia);
+app.use(router);
+app.mount('#app');
