@@ -26,9 +26,19 @@ app.use(cors({
     credentials: true
 }));
 
-// Body parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Body parsing - skip for /api routes (proxied to Flask, need raw stream)
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+    express.json()(req, res, next);
+});
+app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+    express.urlencoded({ extended: true })(req, res, next);
+});
 
 // Request logging
 app.use((req, res, next) => {

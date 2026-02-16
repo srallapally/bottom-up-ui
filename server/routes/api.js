@@ -142,13 +142,6 @@ router.use(createProxyMiddleware({
             target: `${config.flaskApiUrl}${req.path}`,
             user: req.session.user?.id
         });
-        if (req.body && Object.keys(req.body).length) {
-            const bodyData = JSON.stringify(req.body);
-
-            proxyReq.setHeader('Content-Type', 'application/json');
-            proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-            proxyReq.write(bodyData);
-        }
     },
 
     onProxyRes: (proxyRes, req, res) => {
