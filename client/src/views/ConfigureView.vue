@@ -140,7 +140,7 @@ const handleStartMining = async (config) => {
     await sessionStore.saveConfig(config);
     
     // Start mining process
-    resultsStore.startMining();
+    //resultsStore.startMining();
     
     // Navigate to processing view
     router.push('/processing');

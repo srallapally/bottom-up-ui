@@ -15,9 +15,9 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 180000, // 3 minutes for mining operations
   withCredentials: true, // Include session cookies
-  headers: {
-    'Content-Type': 'application/json'
-  }
+//  headers: {
+//    'Content-Type': 'application/json'
+//  }
 });
 
 // ============================================================================
@@ -215,9 +215,10 @@ export default {
   },
   
   // Upload
-  async uploadFiles(sessionId,formData) {
+  async uploadFiles(sessionId, formData) {
     const { data } = await api.post(`/sessions/${sessionId}/upload`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      // Let axios/browser set the correct multipart boundary
+      timeout: 300000
     });
     return data;
   },
