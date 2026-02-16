@@ -10,7 +10,7 @@
         </div>
         <p class="mt-2 text-muted">Checking system health...</p>
       </div>
-
+      
       <div v-else-if="error" class="alert alert-danger">
         <strong>Health Check Failed</strong>
         <p class="mb-0">{{ error }}</p>
@@ -18,7 +18,7 @@
           Retry
         </button>
       </div>
-
+      
       <div v-else-if="healthData">
         <!-- Express Server Status -->
         <div class="mb-3">
@@ -32,9 +32,9 @@
             </span>
           </div>
         </div>
-
+        
         <hr>
-
+        
         <!-- Flask Backend Status -->
         <div class="mb-3">
           <div class="d-flex justify-content-between align-items-center">
@@ -46,7 +46,7 @@
               {{ typeof healthData.flask === 'string' ? healthData.flask : 'ok' }}
             </span>
           </div>
-
+          
           <!-- Flask Details -->
           <div v-if="healthData.flask && typeof healthData.flask === 'object'" class="mt-2 ps-3">
             <div class="text-muted small">
@@ -57,9 +57,9 @@
             </div>
           </div>
         </div>
-
+        
         <hr>
-
+        
         <!-- Authentication Status -->
         <div class="mb-3">
           <div class="d-flex justify-content-between align-items-center">
@@ -71,7 +71,7 @@
               {{ healthData.authenticated ? 'Authenticated' : 'Not Authenticated' }}
             </span>
           </div>
-
+          
           <!-- User Details -->
           <div v-if="healthData.user" class="mt-2 ps-3">
             <div class="text-muted small">
@@ -80,7 +80,7 @@
             </div>
           </div>
         </div>
-
+        
         <!-- Last Checked -->
         <div class="text-center mt-4">
           <button class="btn btn-sm btn-outline-primary" @click="checkHealth">
@@ -107,7 +107,7 @@ const lastChecked = ref(new Date());
 const checkHealth = async () => {
   loading.value = true;
   error.value = null;
-
+  
   try {
     healthData.value = await api.health();
     lastChecked.value = new Date();
@@ -121,9 +121,9 @@ const checkHealth = async () => {
 
 const statusBadgeClass = (status) => {
   if (!status) return 'badge bg-secondary';
-
+  
   const statusStr = typeof status === 'string' ? status : status.status;
-
+  
   if (statusStr === 'ok' || statusStr === 'healthy') {
     return 'badge bg-success';
   }

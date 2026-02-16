@@ -132,7 +132,7 @@ router.use(createProxyMiddleware({
     target: config.flaskApiUrl,
     changeOrigin: true,
     pathRewrite: {
-        '^/api': '/api' // Keep /api prefix
+        '^/': '/api/' // Keep /api prefix
     },
 
     onProxyReq: (proxyReq, req, res) => {
