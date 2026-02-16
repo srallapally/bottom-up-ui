@@ -77,6 +77,12 @@ const routes = [
     }
   },
   {
+    path: '/roles/:roleId',
+    name: 'RoleDetail',
+    component: () => import('@/views/RoleDetailView.vue'),
+    meta: { requiresAuth: true, requiresSession: true, requiresResults: true }
+  },
+  {
     path: '/browse/identities',
     name: 'BrowseIdentities',
     component: () => import('@/views/browse/IdentitiesView.vue'),

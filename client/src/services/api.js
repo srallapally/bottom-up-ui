@@ -270,10 +270,15 @@ export default {
     const { data } = await api.get('/over-provisioned');
     return data;
   },
-  
+  // Browse processed data
+  async browseData(sessionId, fileType) {
+    const { data } = await api.get(`/sessions/${sessionId}/browse/${fileType}`);
+    return data;
+  },
   // Assignments
   async getAssignments(params) {
     const { data } = await api.get('/assignments', { params });
     return data;
-  }
+  },
+
 };

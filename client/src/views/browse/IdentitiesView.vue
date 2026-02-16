@@ -1,27 +1,50 @@
+<!-- client/src/views/browse/IdentitiesView.vue -->
 <template>
-  <div class="container mt-4">
-    <h2>Browse Identities</h2>
-    <p class="text-muted">View all user identities with role assignments</p>
-    
-    <div class="alert alert-info">
-      <strong>Placeholder View</strong> - This will be implemented in Phase 4
-      <br>
-      Will include AG Grid table with user data
-    </div>
-    
-    <div class="card">
-      <div class="card-body">
-        <h5>Identities Table</h5>
-        <p>Displays: USR_ID, department, jobcode, location_country, manager, assigned roles</p>
-        
-        <router-link to="/results" class="btn btn-secondary">
-          Back to Results
+  <div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <div>
+        <router-link to="/results" class="text-muted text-decoration-none small d-block mb-1">
+          &larr; Back to results
         </router-link>
+        <h3 class="mb-0">Identities</h3>
       </div>
     </div>
+
+    <AGGridWrapper
+        :columnDefs="columnDefs"
+        :rowData="rows"
+        :loading="loading"
+        :error="error"
+        gridHeight="600px"
+        exportFilename="identities"
+    />
   </div>
 </template>
 
 <script setup>
-// AG Grid integration will be added in Phase 4
+import { ref, onMounted } from 'vue';
+import { useSessionStore } from '@/stores/session';
+import api from '@/services/api';
+import AGGridWrapper from '@/components/tables/AGGridWrapper.vue';
+
+const sessionStore = useSessionStore();
+const rows = ref([]);
+const loading = ref(true);
+const error = ref(null);
+const columnDefs = ref([]);
+
+onMounted(async () => {
+  try {
+    const data = await api.browseData(sessionStore.sessionId, 'identities');
+    rows.value = data.rows;
+    columnDefs.value = data.columns.map(col => ({
+      field: col,
+      headerName: col
+    }));
+  } catch (e) {
+    error.value = e.userMessage || 'Failed to load identities';
+  } finally {
+    loading.value = false;
+  }
+});
 </script>

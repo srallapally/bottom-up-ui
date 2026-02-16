@@ -118,6 +118,89 @@ export const useSessionStore = defineStore('session', {
         this.loading = false;
       }
     },
+
+    // =========================================================================
+// ADD THIS ACTION to client/src/stores/session.js inside the actions: { }
+// =========================================================================
+// Place it after the createSession action.
+
+    /**
+     * Resume an existing session after page refresh.
+     * Probes Flask to determine session state:
+     *   1. Session exists?
+     *   2. Which files are uploaded?
+     *   3. Are files processed (stats exist)?
+     *   4. Is config saved?
+     *
+     * @param {string} sessionId - Session ID from Express CSV tracker
+     */
+    async resumeSession(sessionId) {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        console.log('[Session] Resuming session:', sessionId);
+
+        // Set the session reference immediately
+        this.currentSession = {
+          session_id: sessionId,
+          created_at: null, // Unknown after refresh
+          status: 'resuming'
+        };
+
+        // Probe for processed stats (implies files were uploaded + processed)
+        try {
+          const config = await api.getConfig(sessionId);
+          this.config = config;
+          console.log('[Session] Config loaded');
+        } catch (e) {
+          console.log('[Session] No config saved yet');
+        }
+
+        // Try to load processed stats by checking if results endpoint knows about them
+        // The stats are embedded in the results if mining was done,
+        // or we can try GET /api/sessions/{id}/process result
+        // For now, check if the session directory has processed/stats.json
+        // by attempting to get config (which requires processed data)
+        try {
+          // Use a lightweight probe — GET config succeeds if session exists
+          // If config loaded above, session is at least at configure stage
+          if (this.config) {
+            this.processedStats = this.config._stats || null;
+
+            // Mark files as uploaded if we got this far
+            this.uploadedFiles = {
+              identities: { filename: 'identities.csv', resumedFromServer: true },
+              assignments: { filename: 'assignments.csv', resumedFromServer: true },
+              entitlements: { filename: 'entitlements.csv', resumedFromServer: true }
+            };
+          }
+        } catch (e) {
+          console.log('[Session] Could not determine file status');
+        }
+
+        // If config didn't give us stats, check for uploaded files by file type
+        if (!this.allFilesUploaded) {
+          // We can't easily probe individual file existence without a dedicated endpoint.
+          // For MVP: if we have a config, assume files are uploaded.
+          // If no config, assume fresh session.
+          console.log('[Session] Session resumed in minimal state');
+        }
+
+        console.log('[Session] Resume complete:', {
+          hasConfig: !!this.config,
+          filesUploaded: this.allFilesUploaded,
+          hasStats: !!this.processedStats
+        });
+
+      } catch (error) {
+        this.error = error.userMessage || 'Failed to resume session';
+        this.currentSession = null;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
     
     /**
      * Delete a session

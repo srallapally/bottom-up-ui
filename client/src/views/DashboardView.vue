@@ -1,3 +1,4 @@
+<!-- client/src/views/DashboardView.vue -->
 <template>
   <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -9,7 +10,7 @@
       <button
           class="btn btn-primary"
           @click="handleCreateSession"
-          :disabled="sessionStore.loading"
+          :disabled="sessionStore.loading || resuming"
       >
         <span v-if="sessionStore.loading" class="spinner-border spinner-border-sm me-2" role="status">
           <span class="visually-hidden">Creating...</span>
@@ -18,8 +19,14 @@
       </button>
     </div>
 
+    <!-- Resuming indicator -->
+    <div v-if="resuming" class="text-center py-5">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <p class="text-muted">Restoring your session...</p>
+    </div>
+
     <!-- Current Session -->
-    <div v-if="sessionStore.hasSession" class="mb-4">
+    <div v-else-if="sessionStore.hasSession" class="mb-4">
       <h5 class="mb-3">Current Session</h5>
 
       <SessionCard
@@ -57,9 +64,6 @@
             @click="handleCreateSession"
             :disabled="sessionStore.loading"
         >
-          <span v-if="sessionStore.loading" class="spinner-border spinner-border-sm me-2" role="status">
-            <span class="visually-hidden">Creating...</span>
-          </span>
           Create Session
         </button>
       </div>
@@ -75,32 +79,56 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
 import { useSessionStore } from '@/stores/session';
 import { useResultsStore } from '@/stores/results';
 import SessionCard from '@/components/session/SessionCard.vue';
 import ErrorAlert from '@/components/common/ErrorAlert.vue';
 
 const router = useRouter();
+const authStore = useAuthStore();
 const sessionStore = useSessionStore();
 const resultsStore = useResultsStore();
 
-// CHANGED: Detect completed status when results exist
+const resuming = ref(false);
+
+// On mount: rehydrate session if stores are empty but a session exists on the server
+onMounted(async () => {
+  if (!sessionStore.hasSession && authStore.miningSessionId) {
+    resuming.value = true;
+    try {
+      await sessionStore.resumeSession(authStore.miningSessionId);
+
+      // If session has processed data, try loading results too
+      if (sessionStore.filesProcessed && !resultsStore.hasResults) {
+        try {
+          await resultsStore.loadResults(authStore.miningSessionId);
+        } catch (e) {
+          // No results yet — that's fine, user hasn't mined
+          console.log('[Dashboard] No results to load (expected if not mined yet)');
+        }
+      }
+    } catch (e) {
+      console.error('[Dashboard] Failed to resume session:', e);
+      // Session might have been deleted on Flask side — clear the stale reference
+      authStore.miningSessionId = null;
+    } finally {
+      resuming.value = false;
+    }
+  }
+});
+
 const getSessionStatus = () => {
   if (!sessionStore.hasSession) return 'created';
-
   if (resultsStore.hasResults) return 'completed';
-
   if (sessionStore.filesProcessed) return 'ready';
-
   if (sessionStore.allFilesUploaded) return 'ready';
-
   if (sessionStore.uploadedFileCount > 0) return 'uploading';
-
   return 'created';
 };
 
-// Create new session
 const handleCreateSession = async () => {
   try {
     await sessionStore.createSession();
@@ -110,7 +138,6 @@ const handleCreateSession = async () => {
   }
 };
 
-// Continue existing session
 const handleContinue = () => {
   if (!sessionStore.allFilesUploaded) {
     router.push('/upload');
@@ -121,20 +148,19 @@ const handleContinue = () => {
   }
 };
 
-// View results (if mining completed)
 const handleViewResults = () => {
   router.push('/results');
 };
 
-// ADDED: Navigate to configure to re-run with different params
 const handleReconfigure = () => {
   router.push('/configure');
 };
 
-// Delete session
 const handleDelete = async (sessionId) => {
   try {
     await sessionStore.deleteSession(sessionId);
+    resultsStore.clearResults();
+    authStore.miningSessionId = null;
   } catch (error) {
     console.error('Failed to delete session:', error);
   }
