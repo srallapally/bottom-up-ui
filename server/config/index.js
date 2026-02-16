@@ -23,7 +23,7 @@ const config = {
     },
 
     // CORS
-    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:8080',
+    corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
 
     // Logging
     logLevel: process.env.LOG_LEVEL || 'info',

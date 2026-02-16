@@ -175,7 +175,7 @@ export const useSessionStore = defineStore('session', {
         formData.append('file_type', fileType);
         
         // Upload to backend
-        await api.uploadFiles(formData);
+        await api.uploadFiles(this.currentSession.session_id,formData);
         
         // Track upload in state
         this.uploadedFiles[fileType] = {

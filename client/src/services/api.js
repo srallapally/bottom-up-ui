@@ -142,7 +142,7 @@ function showErrorToast(message) {
   toastEl.setAttribute('role', 'alert');
   toastEl.setAttribute('aria-live', 'assertive');
   toastEl.setAttribute('aria-atomic', 'true');
-  
+
   toastEl.innerHTML = `
     <div class="d-flex">
       <div class="toast-body">
@@ -153,20 +153,33 @@ function showErrorToast(message) {
   `;
   
   container.appendChild(toastEl);
-  
+
   // Initialize and show toast (Bootstrap 5)
-  const toast = new window.bootstrap.Toast(toastEl, {
-    autohide: true,
-    delay: 5000
-  });
-  
-  toast.show();
+  // Check if Bootstrap is available
+  if (window.bootstrap && window.bootstrap.Toast) {
+    const toast = new window.bootstrap.Toast(toastEl, {
+      autohide: true,
+      delay: 5000
+    });
+
+    toast.show();
   
   // Remove from DOM after hidden
   toastEl.addEventListener('hidden.bs.toast', () => {
     toastEl.remove();
   });
+} else {
+    // Fallback: Just show the toast without Bootstrap JS
+    toastEl.classList.add('show');
+
+    // Auto-remove after delay
+    setTimeout(() => {
+      toastEl.classList.remove('show');
+      setTimeout(() => toastEl.remove(), 300);
+    }, 5000);
+  }
 }
+
 
 function escapeHtml(text) {
   const div = document.createElement('div');
@@ -202,8 +215,8 @@ export default {
   },
   
   // Upload
-  async uploadFiles(formData) {
-    const { data } = await api.post('/upload', formData, {
+  async uploadFiles(sessionId,formData) {
+    const { data } = await api.post(`/sessions/${sessionId}/upload`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
     return data;

@@ -6,7 +6,8 @@ import App from './App.vue';
 // Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';
 // Bootstrap JS (for toast notifications)
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+import * as bootstrap from 'bootstrap';
+window.bootstrap = bootstrap;
 
 // Custom styles
 import './assets/styles/main.css';
