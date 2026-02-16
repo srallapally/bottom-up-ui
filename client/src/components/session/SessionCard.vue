@@ -10,70 +10,70 @@
             <small>Session ID: {{ sessionId.slice(0, 8) }}...</small>
           </p>
         </div>
-        
-        <span 
-          class="badge"
-          :class="statusBadgeClass"
+
+        <span
+            class="badge"
+            :class="statusBadgeClass"
         >
           {{ statusText }}
         </span>
       </div>
-      
+
       <!-- Session Info -->
       <div class="session-info mb-3">
         <div class="info-row">
           <span class="info-label">Created:</span>
           <span class="info-value">{{ formatDate(createdAt) }}</span>
         </div>
-        
+
         <div v-if="lastActivity" class="info-row">
           <span class="info-label">Last Activity:</span>
           <span class="info-value">{{ formatDate(lastActivity) }}</span>
         </div>
       </div>
-      
+
       <!-- Upload Progress -->
       <div v-if="showProgress" class="upload-progress mb-3">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <small class="text-muted">Upload Progress</small>
           <small class="text-muted">{{ uploadedCount }}/3 files</small>
         </div>
-        
+
         <div class="progress" style="height: 6px;">
-          <div 
-            class="progress-bar"
-            :class="progressBarClass"
-            :style="{ width: uploadProgress + '%' }"
-            role="progressbar"
-            :aria-valuenow="uploadProgress"
-            aria-valuemin="0"
-            aria-valuemax="100"
+          <div
+              class="progress-bar"
+              :class="progressBarClass"
+              :style="{ width: uploadProgress + '%' }"
+              role="progressbar"
+              :aria-valuenow="uploadProgress"
+              aria-valuemin="0"
+              aria-valuemax="100"
           ></div>
         </div>
-        
+
         <div class="file-checklist mt-2">
           <div class="file-check-item">
-            <span 
-              class="file-check-icon"
-              :class="{ 'text-success': hasIdentities, 'text-muted': !hasIdentities }"
+            <span
+                class="file-check-icon"
+                :class="{ 'text-success': hasIdentities, 'text-muted': !hasIdentities }"
             >
               {{ hasIdentities ? '✓' : '○' }}
             </span>
             <span class="file-check-label">Identities</span>
           </div>
           <div class="file-check-item">
-            <span 
-              class="file-check-icon"
-              :class="{ 'text-success': hasAssignments, 'text-muted': !hasAssignments }"
+            <span
+                class="file-check-icon"
+                :class="{ 'text-success': hasAssignments, 'text-muted': !hasAssignments }"
             >
               {{ hasAssignments ? '✓' : '○' }}
             </span>
             <span class="file-check-label">Assignments</span>
           </div>
           <div class="file-check-item">
-            <span 
-              class="file-check-icon"
-              :class="{ 'text-success': hasEntitlements, 'text-muted': !hasEntitlements }"
+            <span
+                class="file-check-icon"
+                :class="{ 'text-success': hasEntitlements, 'text-muted': !hasEntitlements }"
             >
               {{ hasEntitlements ? '✓' : '○' }}
             </span>
@@ -81,7 +81,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Stats (if completed) -->
       <div v-if="stats" class="session-stats mb-3">
         <div class="row g-2">
@@ -105,28 +105,37 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Actions -->
       <div class="card-actions d-flex gap-2">
         <button
-          v-if="canContinue"
-          class="btn btn-primary flex-grow-1"
-          @click="$emit('continue')"
+            v-if="canContinue"
+            class="btn btn-primary flex-grow-1"
+            @click="$emit('continue')"
         >
           Continue
         </button>
-        
+
         <button
-          v-if="canViewResults"
-          class="btn btn-success flex-grow-1"
-          @click="$emit('view-results')"
+            v-if="canViewResults"
+            class="btn btn-success flex-grow-1"
+            @click="$emit('view-results')"
         >
           View Results
         </button>
-        
+
+        <!-- ADDED: Reconfigure button when results exist -->
         <button
-          class="btn btn-outline-danger"
-          @click="handleDelete"
+            v-if="canViewResults"
+            class="btn btn-outline-warning"
+            @click="$emit('reconfigure')"
+        >
+          Reconfigure
+        </button>
+
+        <button
+            class="btn btn-outline-danger"
+            @click="handleDelete"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
             <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
@@ -135,16 +144,16 @@
         </button>
       </div>
     </div>
-    
+
     <!-- Confirm Delete Modal -->
     <ConfirmDialog
-      v-if="showDeleteConfirm"
-      title="Delete Session?"
-      message="Are you sure you want to delete this session? All uploaded files and results will be lost."
-      confirmText="Delete"
-      confirmVariant="danger"
-      @confirm="confirmDelete"
-      @cancel="showDeleteConfirm = false"
+        v-if="showDeleteConfirm"
+        title="Delete Session?"
+        message="Are you sure you want to delete this session? All uploaded files and results will be lost."
+        confirmText="Delete"
+        confirmVariant="danger"
+        @confirm="confirmDelete"
+        @cancel="showDeleteConfirm = false"
     />
   </div>
 </template>
@@ -197,7 +206,8 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['continue', 'view-results', 'delete']);
+// CHANGED: Added 'reconfigure' emit
+const emit = defineEmits(['continue', 'view-results', 'reconfigure', 'delete']);
 
 const showDeleteConfirm = ref(false);
 
@@ -269,19 +279,19 @@ const confirmDelete = () => {
 // Formatters
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
-  
+
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now - date;
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
-  
+
   if (diffMins < 1) return 'Just now';
   if (diffMins < 60) return `${diffMins} minute${diffMins !== 1 ? 's' : ''} ago`;
   if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
   if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
-  
+
   return date.toLocaleDateString();
 };
 

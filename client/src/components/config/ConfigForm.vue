@@ -1,29 +1,29 @@
 <template>
   <div class="config-form">
     <form @submit.prevent="handleSubmit">
-      <!-- Birthright Detection Section -->
+      <!-- Universal Access Section (was: Birthright Detection) -->
       <div class="config-section">
-        <h5 class="section-title">Birthright Detection</h5>
+        <h5 class="section-title">Universal Access Detection</h5>
         <p class="section-description text-muted">
-          Identify entitlements that most users have (e.g., email, basic system access)
+          Find access that nearly everyone has, like email or VPN — these become your baseline role
         </p>
-        
+
         <div class="row">
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                Birthright Threshold
-                <InfoTooltip 
-                  text="Percentage of users required to classify as birthright (e.g., 0.8 = 80%)"
+                Universal Access Threshold
+                <InfoTooltip
+                    text="What % of users must have an access for it to be considered universal? (80% = 4 out of 5 users)"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.birthright_threshold"
-                :min="0.5"
-                :max="1.0"
-                :step="0.05"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.birthright_threshold"
+                  :min="0.5"
+                  :max="1.0"
+                  :step="0.05"
               />
               <div class="d-flex justify-content-between">
                 <small class="text-muted">50%</small>
@@ -34,112 +34,112 @@
           </div>
         </div>
       </div>
-      
-      <!-- Leiden Clustering Section -->
+
+      <!-- Access Pattern Discovery Section (was: Entitlement Clustering) -->
       <div class="config-section">
-        <h5 class="section-title">Entitlement Clustering</h5>
+        <h5 class="section-title">Access Pattern Discovery</h5>
         <p class="section-description text-muted">
-          Group similar entitlements based on co-occurrence patterns
+          Find groups of access rights that are commonly granted together
         </p>
-        
+
         <div class="row">
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                Minimum Similarity
-                <InfoTooltip 
-                  text="Minimum Jaccard similarity to connect entitlements (0.3 recommended)"
+                How closely related must access rights be?
+                <InfoTooltip
+                    text="Higher = stricter grouping (only very similar access is grouped). Lower = broader groups"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.leiden_min_similarity"
-                :min="0.2"
-                :max="0.7"
-                :step="0.05"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.leiden_min_similarity"
+                  :min="0.2"
+                  :max="0.7"
+                  :step="0.05"
               />
               <div class="d-flex justify-content-between">
-                <small class="text-muted">0.2</small>
+                <small class="text-muted">Broader</small>
                 <strong>{{ localConfig.leiden_min_similarity.toFixed(2) }}</strong>
-                <small class="text-muted">0.7</small>
+                <small class="text-muted">Stricter</small>
               </div>
             </div>
           </div>
-          
+
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                Clustering Resolution
-                <InfoTooltip 
-                  text="Higher values create more/smaller roles, lower creates fewer/larger roles"
+                Role Granularity
+                <InfoTooltip
+                    text="More = many focused roles. Less = fewer broad roles"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.leiden_resolution"
-                :min="0.3"
-                :max="3.0"
-                :step="0.1"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.leiden_resolution"
+                  :min="0.3"
+                  :max="3.0"
+                  :step="0.1"
               />
               <div class="d-flex justify-content-between">
-                <small class="text-muted">0.3</small>
+                <small class="text-muted">Fewer broad roles</small>
                 <strong>{{ localConfig.leiden_resolution.toFixed(1) }}</strong>
-                <small class="text-muted">3.0</small>
+                <small class="text-muted">Many focused roles</small>
               </div>
             </div>
           </div>
         </div>
       </div>
-      
-      <!-- Role Building Section -->
+
+      <!-- Role Size & Assignment Section (was: Role Building) -->
       <div class="config-section">
-        <h5 class="section-title">Role Building</h5>
+        <h5 class="section-title">Role Size &amp; Assignment</h5>
         <p class="section-description text-muted">
-          Define role size and user assignment criteria
+          Control how roles are constructed and who gets assigned to them
         </p>
-        
+
         <div class="row">
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                Minimum Role Size
-                <InfoTooltip 
-                  text="Minimum users required for a role (smaller roles are discarded)"
+                Smallest Allowed Role
+                <InfoTooltip
+                    text="Roles with fewer users than this are discarded as too niche"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.min_role_size"
-                :min="5"
-                :max="50"
-                :step="5"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.min_role_size"
+                  :min="5"
+                  :max="50"
+                  :step="5"
               />
               <div class="d-flex justify-content-between">
-                <small class="text-muted">5</small>
-                <strong>{{ localConfig.min_role_size }}</strong>
-                <small class="text-muted">50</small>
+                <small class="text-muted">5 users</small>
+                <strong>{{ localConfig.min_role_size }} users</strong>
+                <small class="text-muted">50 users</small>
               </div>
             </div>
           </div>
-          
+
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                Minimum Coverage
-                <InfoTooltip 
-                  text="Minimum % of role entitlements user must have (0.5 = 50%)"
+                How well must a user match a role?
+                <InfoTooltip
+                    text="A user must have at least this % of a role's access to be assigned to it"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.min_entitlement_coverage"
-                :min="0.3"
-                :max="0.9"
-                :step="0.05"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.min_entitlement_coverage"
+                  :min="0.3"
+                  :max="0.9"
+                  :step="0.05"
               />
               <div class="d-flex justify-content-between">
                 <small class="text-muted">30%</small>
@@ -148,22 +148,22 @@
               </div>
             </div>
           </div>
-          
+
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                Max Roles Per User
-                <InfoTooltip 
-                  text="Maximum number of roles one user can belong to"
+                Maximum Roles Per Person
+                <InfoTooltip
+                    text="Limit how many roles one person can hold"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.max_clusters_per_user"
-                :min="1"
-                :max="10"
-                :step="1"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.max_clusters_per_user"
+                  :min="1"
+                  :max="10"
+                  :step="1"
               />
               <div class="d-flex justify-content-between">
                 <small class="text-muted">1</small>
@@ -174,30 +174,30 @@
           </div>
         </div>
       </div>
-      
-      <!-- Confidence Scoring Section -->
+
+      <!-- Confidence Thresholds Section (was: Confidence Scoring) -->
       <div class="config-section">
-        <h5 class="section-title">Confidence Scoring</h5>
+        <h5 class="section-title">Confidence Thresholds</h5>
         <p class="section-description text-muted">
-          Set thresholds for HIGH/MEDIUM/LOW confidence labels
+          Control how assignments are rated — HIGH confidence means strong evidence the access is appropriate
         </p>
-        
+
         <div class="row">
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                High Confidence Threshold
-                <InfoTooltip 
-                  text="Confidence score above this is marked HIGH (0.8 = 80%)"
+                High Confidence Cutoff
+                <InfoTooltip
+                    text="Assignments scored above this are marked HIGH — safe to auto-approve"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.confidence_high_threshold"
-                :min="0.6"
-                :max="1.0"
-                :step="0.05"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.confidence_high_threshold"
+                  :min="0.6"
+                  :max="1.0"
+                  :step="0.05"
               />
               <div class="d-flex justify-content-between">
                 <small class="text-muted">60%</small>
@@ -206,22 +206,22 @@
               </div>
             </div>
           </div>
-          
+
           <div class="col-md-6">
             <div class="mb-3">
               <label class="form-label">
-                Medium Confidence Threshold
-                <InfoTooltip 
-                  text="Confidence score above this is marked MEDIUM"
+                Medium Confidence Cutoff
+                <InfoTooltip
+                    text="Assignments between this and the high cutoff need manual review"
                 />
               </label>
               <input
-                type="range"
-                class="form-range"
-                v-model.number="localConfig.confidence_medium_threshold"
-                :min="0.3"
-                :max="0.8"
-                :step="0.05"
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.confidence_medium_threshold"
+                  :min="0.3"
+                  :max="0.8"
+                  :step="0.05"
               />
               <div class="d-flex justify-content-between">
                 <small class="text-muted">30%</small>
@@ -232,31 +232,31 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Form Actions -->
       <div class="form-actions d-flex justify-content-between">
         <button
-          type="button"
-          class="btn btn-outline-secondary"
-          @click="handleReset"
+            type="button"
+            class="btn btn-outline-secondary"
+            @click="handleReset"
         >
           Reset to Defaults
         </button>
-        
+
         <div>
           <button
-            v-if="showCancel"
-            type="button"
-            class="btn btn-secondary me-2"
-            @click="$emit('cancel')"
+              v-if="showCancel"
+              type="button"
+              class="btn btn-secondary me-2"
+              @click="$emit('cancel')"
           >
             Cancel
           </button>
-          
+
           <button
-            type="submit"
-            class="btn btn-primary"
-            :disabled="loading"
+              type="submit"
+              class="btn btn-primary"
+              :disabled="loading"
           >
             <span v-if="loading" class="spinner-border spinner-border-sm me-2" role="status">
               <span class="visually-hidden">Saving...</span>
@@ -311,11 +311,11 @@ const localConfig = ref({ ...DEFAULT_CONFIG, ...props.config });
 
 // Watch for external config changes
 watch(
-  () => props.config,
-  (newConfig) => {
-    localConfig.value = { ...DEFAULT_CONFIG, ...newConfig };
-  },
-  { deep: true }
+    () => props.config,
+    (newConfig) => {
+      localConfig.value = { ...DEFAULT_CONFIG, ...newConfig };
+    },
+    { deep: true }
 );
 
 // Form handlers
