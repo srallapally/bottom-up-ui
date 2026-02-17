@@ -35,6 +35,16 @@
         </div>
       </div>
 
+      <!-- User Attributes Section (NEW for V2) -->
+      <div class="config-section">
+        <h5 class="section-title">User Attributes for Confidence Scoring</h5>
+        <p class="section-description text-muted">
+          Select 2-5 identity attributes (department, location, job title, etc.) to weight role assignments
+        </p>
+
+        <UserAttributesConfig v-model="localConfig.user_attributes" />
+      </div>
+
       <!-- Access Pattern Discovery Section (was: Entitlement Clustering) -->
       <div class="config-section">
         <h5 class="section-title">Access Pattern Discovery</h5>
@@ -63,6 +73,30 @@
                 <small class="text-muted">Broader</small>
                 <strong>{{ localConfig.leiden_min_similarity.toFixed(2) }}</strong>
                 <small class="text-muted">Stricter</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Minimum Shared Users
+                <InfoTooltip
+                    text="Require at least this many users to share entitlements before grouping them"
+                />
+              </label>
+              <input
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.leiden_min_shared_users"
+                  :min="2"
+                  :max="10"
+                  :step="1"
+              />
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">2 users</small>
+                <strong>{{ localConfig.leiden_min_shared_users }} users</strong>
+                <small class="text-muted">10 users</small>
               </div>
             </div>
           </div>
@@ -172,6 +206,160 @@
               </div>
             </div>
           </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Minimum Absolute Overlap
+                <InfoTooltip
+                    text="User must match at least this many entitlements (floor requirement)"
+                />
+              </label>
+              <input
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.min_absolute_overlap"
+                  :min="1"
+                  :max="10"
+                  :step="1"
+              />
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">1</small>
+                <strong>{{ localConfig.min_absolute_overlap }}</strong>
+                <small class="text-muted">10</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Minimum Entitlements Per Role
+                <InfoTooltip
+                    text="Roles with fewer entitlements are discarded as too simple"
+                />
+              </label>
+              <input
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.min_entitlements_per_role"
+                  :min="2"
+                  :max="10"
+                  :step="1"
+              />
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">2</small>
+                <strong>{{ localConfig.min_entitlements_per_role }}</strong>
+                <small class="text-muted">10</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prevalence-Based Role Overlap Section (NEW for V2) -->
+      <div class="config-section">
+        <h5 class="section-title">Prevalence-Based Role Overlap</h5>
+        <p class="section-description text-muted">
+          Control how entitlements are classified within roles and detect role merge candidates
+        </p>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Core Entitlement Threshold
+                <InfoTooltip
+                    text="What % of role members must have an entitlement for it to be 'core' to the role?"
+                />
+              </label>
+              <input
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.entitlement_prevalence_threshold"
+                  :min="0.5"
+                  :max="1.0"
+                  :step="0.05"
+              />
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">50%</small>
+                <strong>{{ (localConfig.entitlement_prevalence_threshold * 100).toFixed(0) }}%</strong>
+                <small class="text-muted">100%</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Common Entitlement Threshold
+                <InfoTooltip
+                    text="Entitlements between this and core threshold are 'common' but not required"
+                />
+              </label>
+              <input
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.entitlement_association_threshold"
+                  :min="0.2"
+                  :max="0.8"
+                  :step="0.05"
+              />
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">20%</small>
+                <strong>{{ (localConfig.entitlement_association_threshold * 100).toFixed(0) }}%</strong>
+                <small class="text-muted">80%</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Birthright Promotion Threshold
+                <InfoTooltip
+                    text="If entitlement is core in this % of roles, flag it for universal access"
+                />
+              </label>
+              <input
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.birthright_promotion_threshold"
+                  :min="0.3"
+                  :max="0.8"
+                  :step="0.05"
+              />
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">30%</small>
+                <strong>{{ (localConfig.birthright_promotion_threshold * 100).toFixed(0) }}%</strong>
+                <small class="text-muted">80%</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="mb-3">
+              <label class="form-label">
+                Role Merge Similarity Threshold
+                <InfoTooltip
+                    text="If two roles have this much core entitlement overlap, flag for potential merge"
+                />
+              </label>
+              <input
+                  type="range"
+                  class="form-range"
+                  v-model.number="localConfig.role_merge_similarity_threshold"
+                  :min="0.5"
+                  :max="0.9"
+                  :step="0.05"
+              />
+              <div class="d-flex justify-content-between">
+                <small class="text-muted">50%</small>
+                <strong>{{ (localConfig.role_merge_similarity_threshold * 100).toFixed(0) }}%</strong>
+                <small class="text-muted">90%</small>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -272,6 +460,7 @@
 <script setup>
 import { ref, watch } from 'vue';
 import InfoTooltip from './InfoTooltip.vue';
+import UserAttributesConfig from './UserAttributesConfig.vue';
 
 const props = defineProps({
   config: {
@@ -298,10 +487,18 @@ const emit = defineEmits(['submit', 'cancel']);
 const DEFAULT_CONFIG = {
   birthright_threshold: 0.8,
   leiden_min_similarity: 0.3,
+  leiden_min_shared_users: 3,
   leiden_resolution: 1.0,
   min_role_size: 10,
   min_entitlement_coverage: 0.5,
+  min_absolute_overlap: 2,
   max_clusters_per_user: 5,
+  min_entitlements_per_role: 2,
+  user_attributes: [],
+  entitlement_prevalence_threshold: 0.75,
+  entitlement_association_threshold: 0.40,
+  birthright_promotion_threshold: 0.50,
+  role_merge_similarity_threshold: 0.70,
   confidence_high_threshold: 0.8,
   confidence_medium_threshold: 0.5
 };

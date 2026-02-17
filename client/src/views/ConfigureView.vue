@@ -4,12 +4,12 @@
       <h2 class="mb-1">Configure Mining</h2>
       <p class="text-muted mb-0">Set mining parameters and start role discovery</p>
     </div>
-    
+
     <!-- Session Info Card -->
     <div v-if="sessionStore.processedStats" class="card mb-4">
       <div class="card-body">
         <h6 class="card-title mb-3">Dataset Summary</h6>
-        
+
         <div class="row g-3">
           <div class="col-md-3">
             <div class="stat-item">
@@ -17,21 +17,21 @@
               <div class="stat-label">Users</div>
             </div>
           </div>
-          
+
           <div class="col-md-3">
             <div class="stat-item">
               <div class="stat-value">{{ formatNumber(sessionStore.processedStats.total_entitlements) }}</div>
               <div class="stat-label">Entitlements</div>
             </div>
           </div>
-          
+
           <div class="col-md-3">
             <div class="stat-item">
               <div class="stat-value">{{ formatNumber(sessionStore.processedStats.total_assignments) }}</div>
               <div class="stat-label">Assignments</div>
             </div>
           </div>
-          
+
           <div class="col-md-3">
             <div class="stat-item">
               <div class="stat-value">{{ sessionStore.processedStats.apps?.length || 0 }}</div>
@@ -41,21 +41,21 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Configuration Form -->
     <div class="card">
       <div class="card-body">
         <ConfigForm
-          :config="currentConfig"
-          :loading="isSaving"
-          submit-label="Start Mining"
-          show-cancel
-          @submit="handleStartMining"
-          @cancel="handleCancel"
+            :config="currentConfig"
+            :loading="isSaving"
+            submit-label="Start Mining"
+            show-cancel
+            @submit="handleStartMining"
+            @cancel="handleCancel"
         />
       </div>
     </div>
-    
+
     <!-- Info Alert -->
     <div class="alert alert-info mt-4" role="alert">
       <div class="d-flex align-items-start">
@@ -66,19 +66,19 @@
         <div>
           <strong>About Role Mining</strong>
           <p class="mb-0 small">
-            This system uses a hybrid approach combining Leiden clustering for entitlement discovery 
-            with multi-factor confidence scoring. Mining typically takes 2-3 minutes for datasets with 
+            This system uses a hybrid approach combining Leiden clustering for entitlement discovery
+            with multi-factor confidence scoring. Mining typically takes 2-3 minutes for datasets with
             50,000+ users.
           </p>
         </div>
       </div>
     </div>
-    
+
     <!-- Error Display -->
     <ErrorAlert
-      v-if="sessionStore.error"
-      :message="sessionStore.error"
-      @dismiss="sessionStore.error = null"
+        v-if="sessionStore.error"
+        :message="sessionStore.error"
+        @dismiss="sessionStore.error = null"
     />
   </div>
 </template>
@@ -98,10 +98,18 @@ const resultsStore = useResultsStore();
 const currentConfig = ref({
   birthright_threshold: 0.8,
   leiden_min_similarity: 0.3,
+  leiden_min_shared_users: 3,
   leiden_resolution: 1.0,
   min_role_size: 10,
   min_entitlement_coverage: 0.5,
+  min_absolute_overlap: 2,
   max_clusters_per_user: 5,
+  min_entitlements_per_role: 2,
+  user_attributes: [],
+  entitlement_prevalence_threshold: 0.75,
+  entitlement_association_threshold: 0.40,
+  birthright_promotion_threshold: 0.50,
+  role_merge_similarity_threshold: 0.70,
   confidence_high_threshold: 0.8,
   confidence_medium_threshold: 0.5
 });
@@ -114,12 +122,12 @@ onMounted(async () => {
     router.push('/dashboard');
     return;
   }
-  
+
   if (!sessionStore.allFilesUploaded) {
     router.push('/upload');
     return;
   }
-  
+
   // Try to load existing config from session
   try {
     const config = await sessionStore.getConfig();
@@ -134,17 +142,17 @@ onMounted(async () => {
 // Start mining with config
 const handleStartMining = async (config) => {
   isSaving.value = true;
-  
+
   try {
     // Save config to session
     await sessionStore.saveConfig(config);
-    
+
     // Start mining process
     //resultsStore.startMining();
-    
+
     // Navigate to processing view
     router.push('/processing');
-    
+
   } catch (error) {
     console.error('Failed to start mining:', error);
     sessionStore.error = error.userMessage || 'Failed to start mining';
