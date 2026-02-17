@@ -1,6 +1,6 @@
 /**
  * Role Mining UI - API Service Layer
- * 
+ *
  * Axios instance with request/response interceptors
  * Error handling with user-friendly messages
  */
@@ -25,17 +25,17 @@ const api = axios.create({
 // ============================================================================
 
 api.interceptors.request.use(
-  (config) => {
-    console.log(`[API] ${config.method.toUpperCase()} ${config.url}`, {
-      params: config.params,
-      data: config.data
-    });
-    return config;
-  },
-  (error) => {
-    console.error('[API] Request error:', error);
-    return Promise.reject(error);
-  }
+    (config) => {
+      console.log(`[API] ${config.method.toUpperCase()} ${config.url}`, {
+        params: config.params,
+        data: config.data
+      });
+      return config;
+    },
+    (error) => {
+      console.error('[API] Request error:', error);
+      return Promise.reject(error);
+    }
 );
 
 // ============================================================================
@@ -43,27 +43,27 @@ api.interceptors.request.use(
 // ============================================================================
 
 api.interceptors.response.use(
-  (response) => {
-    console.log(`[API] Response ${response.config.url}:`, response.status);
-    return response;
-  },
-  (error) => {
-    const userMessage = extractUserMessage(error);
-    
-    // Attach user-friendly message to error
-    error.userMessage = userMessage;
-    
-    console.error('[API] Response error:', {
-      url: error.config?.url,
-      status: error.response?.status,
-      userMessage
-    });
-    
-    // Trigger toast notification
-    showErrorToast(userMessage);
-    
-    return Promise.reject(error);
-  }
+    (response) => {
+      console.log(`[API] Response ${response.config.url}:`, response.status);
+      return response;
+    },
+    (error) => {
+      const userMessage = extractUserMessage(error);
+
+      // Attach user-friendly message to error
+      error.userMessage = userMessage;
+
+      console.error('[API] Response error:', {
+        url: error.config?.url,
+        status: error.response?.status,
+        userMessage
+      });
+
+      // Trigger toast notification
+      showErrorToast(userMessage);
+
+      return Promise.reject(error);
+    }
 );
 
 // ============================================================================
@@ -81,19 +81,19 @@ function extractUserMessage(error) {
     }
     return 'Network error. Please try again.';
   }
-  
+
   const { status, data } = error.response;
-  
+
   // Backend sent structured error with message
   if (data?.message) {
     return data.message;
   }
-  
+
   // Backend sent error field only
   if (data?.error) {
     return data.error;
   }
-  
+
   // HTTP status-based messages
   switch (status) {
     case 400:
@@ -133,7 +133,7 @@ function showErrorToast(message) {
     container.style.zIndex = '9999';
     document.body.appendChild(container);
   }
-  
+
   // Create toast element
   const toastId = `toast-${Date.now()}`;
   const toastEl = document.createElement('div');
@@ -151,7 +151,7 @@ function showErrorToast(message) {
       <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
     </div>
   `;
-  
+
   container.appendChild(toastEl);
 
   // Initialize and show toast (Bootstrap 5)
@@ -163,12 +163,12 @@ function showErrorToast(message) {
     });
 
     toast.show();
-  
-  // Remove from DOM after hidden
-  toastEl.addEventListener('hidden.bs.toast', () => {
-    toastEl.remove();
-  });
-} else {
+
+    // Remove from DOM after hidden
+    toastEl.addEventListener('hidden.bs.toast', () => {
+      toastEl.remove();
+    });
+  } else {
     // Fallback: Just show the toast without Bootstrap JS
     toastEl.classList.add('show');
 
@@ -197,23 +197,28 @@ export default {
     const { data } = await api.get('/health');
     return data;
   },
-  
+
   // Session management
   async getSessions() {
     const { data } = await api.get('/sessions');
     return data;
   },
-  
+
   async createSession() {
     const { data } = await api.post('/sessions');
     return data;
   },
-  
+
   async deleteSession(sessionId) {
     const { data } = await api.delete(`/sessions/${sessionId}`);
     return data;
   },
-  
+
+  async getSessionStatus(sessionId) {
+    const { data } = await api.get(`/sessions/${sessionId}/status`);
+    return data;
+  },
+
   // Upload
   async uploadFiles(sessionId, formData) {
     const { data } = await api.post(`/sessions/${sessionId}/upload`, formData, {
@@ -222,23 +227,23 @@ export default {
     });
     return data;
   },
-  
+
   // Session file processing
   async processFiles(sessionId) {
     const { data } = await api.post(`/sessions/${sessionId}/process`);
     return data;
   },
-  
+
   async getConfig(sessionId) {
     const { data } = await api.get(`/sessions/${sessionId}/config`);
     return data;
   },
-  
+
   async saveConfig(sessionId, configOverrides) {
     const { data } = await api.put(`/sessions/${sessionId}/config`, configOverrides);
     return data;
   },
-  
+
   // Mining
   async mine(sessionId, configOverrides = {}) {
     const { data } = await api.post(`/sessions/${sessionId}/mine`, configOverrides, {
@@ -246,25 +251,25 @@ export default {
     });
     return data;
   },
-  
+
   async getMiningResults(sessionId) {
     const { data } = await api.get(`/sessions/${sessionId}/results`);
     return data;
   },
-  
+
   async exportRoles(sessionId) {
     const response = await api.get(`/sessions/${sessionId}/export`, {
       responseType: 'blob'
     });
     return response.data; // Return blob data directly
   },
-  
+
   // Recommendations
   async getRecommendations(userId) {
     const { data } = await api.get(`/recommendations/${userId}`);
     return data;
   },
-  
+
   // Over-provisioned
   async getOverProvisioned() {
     const { data } = await api.get('/over-provisioned');

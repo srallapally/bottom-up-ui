@@ -31,7 +31,41 @@
     </div>
 
     <!-- Summary cards -->
-    <SummaryCards :summary="resultsStore.summary" class="mb-4" />
+    <SummaryCards :summary="resultsStore.summary" class="mb-3" />
+
+    <!-- Browse data cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3 col-6">
+        <router-link to="/browse/identities" class="text-decoration-none">
+          <div class="card text-center h-100 browse-card">
+            <div class="card-body py-3">
+              <div class="metric-value text-primary">{{ formatNumber(sessionStore.totalUsers) }}</div>
+              <div class="metric-label">Identities</div>
+            </div>
+          </div>
+        </router-link>
+      </div>
+      <div class="col-md-3 col-6">
+        <router-link to="/browse/entitlements" class="text-decoration-none">
+          <div class="card text-center h-100 browse-card">
+            <div class="card-body py-3">
+              <div class="metric-value text-primary">{{ formatNumber(sessionStore.totalEntitlements) }}</div>
+              <div class="metric-label">Entitlements</div>
+            </div>
+          </div>
+        </router-link>
+      </div>
+      <div class="col-md-3 col-6">
+        <router-link to="/browse/assignments" class="text-decoration-none">
+          <div class="card text-center h-100 browse-card">
+            <div class="card-body py-3">
+              <div class="metric-value text-primary">{{ formatNumber(sessionStore.processedStats?.total_assignments) }}</div>
+              <div class="metric-label">Assignments</div>
+            </div>
+          </div>
+        </router-link>
+      </div>
+    </div>
 
     <!-- Role list -->
     <div class="card">
@@ -41,24 +75,6 @@
             :roles="resultsStore.roles"
             :birthright-role="resultsStore.birthrightRole"
         />
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="card mt-3">
-      <div class="card-body">
-        <h6 class="mb-2">Browse Data</h6>
-        <div class="btn-group" role="group">
-          <router-link to="/browse/identities" class="btn btn-outline-primary btn-sm">
-            Identities
-          </router-link>
-          <router-link to="/browse/entitlements" class="btn btn-outline-primary btn-sm">
-            Entitlements
-          </router-link>
-          <router-link to="/browse/assignments" class="btn btn-outline-primary btn-sm">
-            Assignments
-          </router-link>
-        </div>
       </div>
     </div>
 
@@ -104,4 +120,36 @@ const handleExport = async () => {
 const handleReconfigure = () => {
   router.push('/configure');
 };
+
+const formatNumber = (num) => {
+  if (num === null || num === undefined) return '0';
+  return num.toLocaleString();
+};
 </script>
+
+<style scoped>
+.browse-card {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.browse-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #0d6efd;
+}
+
+.metric-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.metric-label {
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+</style>

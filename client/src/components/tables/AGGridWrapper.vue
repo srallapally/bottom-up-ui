@@ -17,8 +17,8 @@
       </div>
 
       <ag-grid-vue
-          class="ag-theme-alpine"
           :style="{ height: gridHeight, width: '100%' }"
+          :theme="theme"
           :columnDefs="columnDefs"
           :rowData="rowData"
           :defaultColDef="defaultColDef"
@@ -34,8 +34,9 @@
 <script setup>
 import { ref } from 'vue';
 import { AgGridVue } from 'ag-grid-vue3';
-import 'ag-grid-community/styles/ag-grid.css';
-import 'ag-grid-community/styles/ag-theme-alpine.css';
+import { themeAlpine } from 'ag-grid-community';
+
+const theme = themeAlpine;
 
 const props = defineProps({
   columnDefs: { type: Array, required: true },

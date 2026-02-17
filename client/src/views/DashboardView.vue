@@ -99,15 +99,13 @@ onMounted(async () => {
   if (!sessionStore.hasSession && authStore.miningSessionId) {
     resuming.value = true;
     try {
-      await sessionStore.resumeSession(authStore.miningSessionId);
+      const { hasResults } = await sessionStore.resumeSession(authStore.miningSessionId);
 
-      // If session has processed data, try loading results too
-      if (sessionStore.filesProcessed && !resultsStore.hasResults) {
+      if (hasResults && !resultsStore.hasResults) {
         try {
           await resultsStore.loadResults(authStore.miningSessionId);
         } catch (e) {
-          // No results yet — that's fine, user hasn't mined
-          console.log('[Dashboard] No results to load (expected if not mined yet)');
+          console.log('[Dashboard] Results exist but failed to load:', e);
         }
       }
     } catch (e) {

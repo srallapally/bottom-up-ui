@@ -67,7 +67,7 @@ router.get('/session', async (req, res) => {
     let miningSessionId = null;
     try {
         const existing = await sessionTracker.getUserSession(req.session.user.id);
-        if (existing && existing.status === 'active') {
+        if (existing) {
             miningSessionId = existing.session_id;
         }
     } catch (err) {

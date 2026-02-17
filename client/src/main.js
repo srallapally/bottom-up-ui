@@ -1,7 +1,12 @@
+// client/src/main.js
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
+import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import router from './router';
 import App from './App.vue';
+
+// AG Grid v35 requires explicit module registration
+ModuleRegistry.registerModules([AllCommunityModule]);
 
 // Bootstrap CSS
 import 'bootstrap/dist/css/bootstrap.min.css';

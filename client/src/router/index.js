@@ -1,6 +1,7 @@
+// client/src/router/index.js
 /**
  * Role Mining UI - Vue Router Configuration
- * 
+ *
  * Routes with navigation guards enforcing workflow:
  * 1. Dashboard (session management)
  * 2. Upload (3 CSV files)
@@ -28,7 +29,7 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/DashboardView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       title: 'Dashboard'
     }
@@ -37,7 +38,7 @@ const routes = [
     path: '/upload',
     name: 'Upload',
     component: () => import('@/views/UploadView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       requiresSession: true,
       title: 'Upload Files'
@@ -47,7 +48,7 @@ const routes = [
     path: '/configure',
     name: 'Configure',
     component: () => import('@/views/ConfigureView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       requiresSession: true,
       requiresFiles: true,
@@ -58,7 +59,7 @@ const routes = [
     path: '/processing',
     name: 'Processing',
     component: () => import('@/views/ProcessingView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       requiresSession: true,
       requiresProcessed: true,
@@ -69,7 +70,7 @@ const routes = [
     path: '/results',
     name: 'Results',
     component: () => import('@/views/ResultsView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       requiresSession: true,
       requiresResults: true,
@@ -86,10 +87,10 @@ const routes = [
     path: '/browse/identities',
     name: 'BrowseIdentities',
     component: () => import('@/views/browse/IdentitiesView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       requiresSession: true,
-      requiresResults: true,
+      requiresProcessed: true,
       title: 'Browse Identities'
     }
   },
@@ -97,10 +98,10 @@ const routes = [
     path: '/browse/entitlements',
     name: 'BrowseEntitlements',
     component: () => import('@/views/browse/EntitlementsView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       requiresSession: true,
-      requiresResults: true,
+      requiresProcessed: true,
       title: 'Browse Entitlements'
     }
   },
@@ -108,10 +109,10 @@ const routes = [
     path: '/browse/assignments',
     name: 'BrowseAssignments',
     component: () => import('@/views/browse/AssignmentsView.vue'),
-    meta: { 
+    meta: {
       requiresAuth: true,
       requiresSession: true,
-      requiresResults: true,
+      requiresProcessed: true,
       title: 'Browse Assignments'
     }
   },
@@ -142,27 +143,27 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
   const sessionStore = useSessionStore();
   const resultsStore = useResultsStore();
-  
+
   console.log('[Router] Navigating:', {
     from: from.path,
     to: to.path,
     meta: to.meta
   });
-  
+
   // Set page title
-  document.title = to.meta.title 
-    ? `${to.meta.title} - Role Mining UI`
-    : 'Role Mining UI';
-  
+  document.title = to.meta.title
+      ? `${to.meta.title} - Role Mining UI`
+      : 'Role Mining UI';
+
   // ============================================================================
   // 1. CHECK AUTHENTICATION
   // ============================================================================
-  
+
   if (to.meta.requiresAuth) {
     // Check if authenticated
     if (!authStore.authenticated) {
       console.log('[Router] Not authenticated, checking session...');
-      
+
       try {
         await authStore.checkSession();
       } catch (error) {
@@ -171,50 +172,50 @@ router.beforeEach(async (to, from, next) => {
         // which will trigger session check again
         return next('/dashboard');
       }
-      
+
       if (!authStore.authenticated) {
         console.log('[Router] Authentication failed, redirecting to dashboard');
         return next('/dashboard');
       }
     }
   }
-  
+
   // ============================================================================
   // 2. CHECK SESSION EXISTS
   // ============================================================================
-  
+
   if (to.meta.requiresSession && !sessionStore.hasSession) {
     console.log('[Router] No session, redirecting to dashboard');
     return next('/dashboard');
   }
-  
+
   // ============================================================================
   // 3. CHECK FILES UPLOADED
   // ============================================================================
-  
+
   if (to.meta.requiresFiles && !sessionStore.allFilesUploaded) {
     console.log('[Router] Files not uploaded, redirecting to upload');
     return next('/upload');
   }
-  
+
   // ============================================================================
   // 4. CHECK FILES PROCESSED
   // ============================================================================
-  
+
   if (to.meta.requiresProcessed && !sessionStore.filesProcessed) {
     console.log('[Router] Files not processed, redirecting to configure');
     return next('/configure');
   }
-  
+
   // ============================================================================
   // 5. CHECK MINING COMPLETE
   // ============================================================================
-  
+
   if (to.meta.requiresResults && !resultsStore.hasResults) {
     console.log('[Router] No results, redirecting to processing');
     return next('/processing');
   }
-  
+
   // All checks passed
   console.log('[Router] Navigation allowed');
   next();
