@@ -12,15 +12,25 @@
  */
 
 import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
 import { useSessionStore } from '@/stores/session';
 import { useResultsStore } from '@/stores/results';
+import auth from '@/auth'
+import About from '@/components/About.vue'
+import Login from '@/components/Login.vue'
 
 // ============================================================================
 // ROUTE DEFINITIONS
 // ============================================================================
 
 const routes = [
+  { path: '/about', component: About },
+  { path: '/login', component: Login },
+  { path: '/logout',
+    beforeEnter (to, from, next) {
+      auth.logout()
+      next('/')
+    }
+  },
   {
     path: '/',
     redirect: '/dashboard'
@@ -29,10 +39,7 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: () => import('@/views/DashboardView.vue'),
-    meta: {
-      requiresAuth: true,
-      title: 'Dashboard'
-    }
+    beforeEnter: requireAuth
   },
   {
     path: '/upload',
@@ -140,7 +147,6 @@ const router = createRouter({
 // ============================================================================
 
 router.beforeEach(async (to, from, next) => {
-  const authStore = useAuthStore();
   const sessionStore = useSessionStore();
   const resultsStore = useResultsStore();
 
@@ -158,26 +164,13 @@ router.beforeEach(async (to, from, next) => {
   // ============================================================================
   // 1. CHECK AUTHENTICATION
   // ============================================================================
-
-  if (to.meta.requiresAuth) {
-    // Check if authenticated
-    if (!authStore.authenticated) {
-      console.log('[Router] Not authenticated, checking session...');
-
-      try {
-        await authStore.checkSession();
-      } catch (error) {
-        console.error('[Router] Session check failed:', error);
-        // Mock auth should auto-create user, but if it fails, redirect to dashboard
-        // which will trigger session check again
-        return next('/dashboard');
-      }
-
-      if (!authStore.authenticated) {
-        console.log('[Router] Authentication failed, redirecting to dashboard');
-        return next('/dashboard');
-      }
-    }
+  // Enforce auth for any route that declares meta.requiresAuth
+  if (to.meta.requiresAuth && !auth.loggedIn()) {
+    console.log('[Router] Not authenticated, redirecting to login');
+    return next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    });
   }
 
   // ============================================================================
@@ -228,6 +221,17 @@ router.beforeEach(async (to, from, next) => {
 router.onError((error) => {
   console.error('[Router] Navigation error:', error);
 });
+
+function requireAuth (to, from, next) {
+  if (!auth.loggedIn()) {
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
+  } else {
+    next()
+  }
+}
 
 // ============================================================================
 // EXPORT

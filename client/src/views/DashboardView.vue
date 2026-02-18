@@ -47,25 +47,64 @@
       />
     </div>
 
-    <!-- No Session State -->
-    <div v-else class="text-center py-5">
-      <div class="empty-state">
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-muted mb-3" viewBox="0 0 16 16">
-          <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
-        </svg>
+    <!-- Sessions List / Loading / Empty -->
+    <div v-else class="py-2">
+      <!-- Initial load guard: prevents empty-state flash -->
+      <div v-if="!sessionsLoaded" class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" role="status"></div>
+        <p class="text-muted mb-0">Loading your sessions...</p>
+      </div>
 
-        <h4>No Active Session</h4>
-        <p class="text-muted mb-4">
-          Create a new session to start role mining
-        </p>
+      <!-- Sessions list -->
+      <div v-else-if="sessionStore.sessions && sessionStore.sessions.length" class="mb-4">
+        <h5 class="mb-3">Your Sessions</h5>
 
-        <button
-            class="btn btn-lg btn-primary"
-            @click="handleCreateSession"
-            :disabled="sessionStore.loading"
-        >
-          Create Session
-        </button>
+        <div class="list-group">
+          <button
+              v-for="s in sessionStore.sessions"
+              :key="s.id"
+              type="button"
+              class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+              @click="handleSelectSession(s)"
+              :disabled="sessionStore.loading || resuming"
+          >
+            <div class="me-3 text-start">
+              <div class="fw-semibold">{{ s.name || s.id }}</div>
+              <div class="small text-muted">
+                Updated {{ formatUpdatedAt(s.updatedAt) }}
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge" :class="statusBadgeClass(s.status)">
+                {{ s.status || 'created' }}
+              </span>
+              <span class="text-muted">›</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Empty state (only after sessionsLoaded=true) -->
+      <div v-else class="text-center py-5">
+        <div class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-muted mb-3" viewBox="0 0 16 16">
+            <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
+          </svg>
+
+          <h4>No Sessions Yet</h4>
+          <p class="text-muted mb-4">
+            Create a new session to start role mining
+          </p>
+
+          <button
+              class="btn btn-lg btn-primary"
+              @click="handleCreateSession"
+              :disabled="sessionStore.loading || resuming"
+          >
+            Create Session
+          </button>
+        </div>
       </div>
     </div>
 
@@ -92,12 +131,24 @@ const authStore = useAuthStore();
 const sessionStore = useSessionStore();
 const resultsStore = useResultsStore();
 
-const resuming = ref(false);
+// Dedicated "first GET /sessions finished" flag to prevent empty-state flash
+const sessionsLoaded = ref(false);
 
-// On mount: rehydrate session if stores are empty but a session exists on the server
+// Initialize resuming synchronously to avoid empty-state flash for resume path
+const resuming = ref(!sessionStore.hasSession && !!authStore.miningSessionId);
+
 onMounted(async () => {
-  if (!sessionStore.hasSession && authStore.miningSessionId) {
-    resuming.value = true;
+  // Always load sessions list first (prevents brief empty state)
+  try {
+    await sessionStore.fetchSessions();
+  } catch (e) {
+    console.error('[Dashboard] Failed to fetch sessions:', e);
+  } finally {
+    sessionsLoaded.value = true;
+  }
+
+  // Rehydrate session if stores are empty but a session exists on the server
+  if (resuming.value) {
     try {
       const { hasResults } = await sessionStore.resumeSession(authStore.miningSessionId);
 
@@ -136,6 +187,34 @@ const handleCreateSession = async () => {
   }
 };
 
+const handleSelectSession = async (session) => {
+  resuming.value = true;
+  try {
+    const sessionId = session.id;
+
+    // Resume/hydrate this session (uploads/processed/config/results flags)
+    const { hasResults } = await sessionStore.resumeSession(sessionId);
+
+    // Persist selection so refresh can resume
+    authStore.miningSessionId = sessionId;
+
+    if (hasResults && !resultsStore.hasResults) {
+      try {
+        await resultsStore.loadResults(sessionId);
+      } catch (e) {
+        console.log('[Dashboard] Results exist but failed to load:', e);
+      }
+    }
+
+    // Continue to next appropriate screen
+    handleContinue();
+  } catch (e) {
+    console.error('[Dashboard] Failed to select session:', e);
+  } finally {
+    resuming.value = false;
+  }
+};
+
 const handleContinue = () => {
   if (!sessionStore.allFilesUploaded) {
     router.push('/upload');
@@ -159,15 +238,39 @@ const handleDelete = async (sessionId) => {
     await sessionStore.deleteSession(sessionId);
     resultsStore.clearResults();
     authStore.miningSessionId = null;
+    // Refresh list after deletion
+    await sessionStore.fetchSessions();
   } catch (error) {
     console.error('Failed to delete session:', error);
   }
 };
-</script>
 
-<style scoped>
-.empty-state {
-  max-width: 400px;
-  margin: 0 auto;
-}
-</style>
+const formatUpdatedAt = (iso) => {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString();
+  } catch (e) {
+    return iso;
+  }
+};
+
+const statusBadgeClass = (status) => {
+  switch ((status || '').toLowerCase()) {
+    case 'ready':
+    case 'completed':
+    case 'done':
+      return 'bg-success';
+    case 'uploading':
+    case 'processing':
+    case 'mining':
+    case 'ready_to_process':
+    case 'ready_to_mine':
+      return 'bg-warning text-dark';
+    case 'error':
+    case 'failed':
+      return 'bg-danger';
+    default:
+      return 'bg-secondary';
+  }
+};
+</script>

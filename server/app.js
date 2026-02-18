@@ -22,9 +22,12 @@ const app = express();
 
 // CORS - Allow frontend origin
 app.use(cors({
-    origin: config.corsOrigin,
-    credentials: true
-}));
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
+}))
+app.options(/.*/, cors())
 
 // Body parsing - skip for /api routes (proxied to Flask, need raw stream)
 app.use((req, res, next) => {

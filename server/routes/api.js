@@ -18,17 +18,22 @@ const router = express.Router();
 // ============================================================================
 
 function requireAuth(req, res, next) {
-    // TEMPORARY: Skip authentication, create mock user
+    // Require a bearer token from the client (Google ID token)
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Missing bearer token' });
+    }
+
+    // Keep existing session.user shape for downstream code (sessionTracker + logs)
+    // Minimal: we don't verify token here; Flask does. This just ensures it exists.
     if (!req.session.user) {
         req.session.user = {
-            id: 'mock-user-123',
-            email: 'mock@example.com',
-            displayName: 'Mock User'
+            id: 'unknown',          // optional placeholder; not used for auth
+            email: 'unknown',       // optional placeholder
+            displayName: 'User'
         };
-        logger.info('Created mock user session (auth disabled)', {
-            userId: req.session.user.id
-        });
     }
+
     next();
 }
 
@@ -37,6 +42,8 @@ function requireAuth(req, res, next) {
 // ============================================================================
 
 function injectUserContext(req, res, next) {
+    // Keep existing headers if other parts rely on them.
+    // NOTE: Auth is done via Authorization header passthrough.
     if (req.session.user) {
         req.headers['x-user-id'] = req.session.user.id;
         req.headers['x-user-email'] = req.session.user.email;
@@ -86,37 +93,11 @@ router.get('/health', async (req, res) => {
 // SESSION ENFORCEMENT
 // ============================================================================
 
-// Intercept session creation to enforce 1 user = 1 session
+// Previously enforced: 1 user = 1 session.
+// New requirement: a logged-in user can have MANY sessions.
+// So this route no longer blocks session creation.
 router.post('/sessions', requireAuth, async (req, res, next) => {
-    const userId = req.session.user.id;
-
-    try {
-        // Check for existing session
-        const existingSession = await sessionTracker.getUserSession(userId);
-
-        if (existingSession) {
-            logger.warn('User attempted to create second session', {
-                userId,
-                existingSessionId: existingSession.session_id
-            });
-
-            return res.status(409).json({
-                error: 'Active session exists',
-                message: 'You already have an active session. Resume it or delete it first.',
-                session: {
-                    session_id: existingSession.session_id,
-                    created_at: existingSession.created_at,
-                    status: existingSession.status
-                }
-            });
-        }
-
-        // No existing session - proceed to Flask
-        next();
-    } catch (error) {
-        logger.error('Session check failed', { userId, error: error.message });
-        res.status(500).json({ error: 'Session check failed' });
-    }
+    next();
 });
 
 // ============================================================================
@@ -136,6 +117,13 @@ router.use(createProxyMiddleware({
     },
 
     onProxyReq: (proxyReq, req, res) => {
+        // CRITICAL: Forward the Authorization header to Flask.
+        // Without this, Flask interceptor returns 401 "Missing bearer token".
+        const authHeader = req.headers.authorization || req.headers.Authorization;
+        if (authHeader) {
+            proxyReq.setHeader('Authorization', authHeader);
+        }
+
         logger.debug('Proxying request to Flask', {
             method: req.method,
             path: req.path,

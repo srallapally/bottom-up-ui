@@ -1,5 +1,6 @@
 // client/src/main.js
 import { createApp } from 'vue';
+import { useAuthStore } from '@/stores/auth'
 import { createPinia } from 'pinia';
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 import router from './router';
@@ -19,7 +20,15 @@ import './assets/styles/main.css';
 
 const app = createApp(App);
 const pinia = createPinia();
-
+app.directive('focus', {
+    // When the bound element is inserted into the DOM...
+    mounted: function (el) {
+        // Focus the element
+        el.focus()
+    }
+})
 app.use(pinia);
 app.use(router);
+const authStore = useAuthStore()
+authStore.init()
 app.mount('#app');

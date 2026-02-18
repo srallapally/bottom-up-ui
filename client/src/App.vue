@@ -1,106 +1,72 @@
 <template>
   <div id="app">
-  	<AppHeader />
-    <!-- header class="bg-primary text-white py-3 mb-4">
-      <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h1 class="h3 mb-0">Role Mining UI</h1>
-            <p class="mb-0 small">Hybrid Entitlement-Centric Role Discovery</p>
-          </div>
-          <div v-if="authStore.authenticated" class="text-end">
-            <small class="d-block">{{ authStore.userName }}</small>
-            <small class="text-white-50">{{ authStore.userEmail }}</small>
-          </div>
-        </div>
-      </div>
-    </header -->
+    <!-- NAV ONLY WHEN LOGGED IN -->
+    <div v-if="loggedIn">
+      <h1>Role Mining UI</h1>
 
-    <!-- Navigation breadcrumb -->
-    <div class="container mb-3" v-if="showBreadcrumb">
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-          <li class="breadcrumb-item">
-            <router-link to="/dashboard">Dashboard</router-link>
-          </li>
-          <li
-              v-if="currentRoute !== 'Dashboard'"
-              class="breadcrumb-item active"
-              aria-current="page"
-          >
-            {{ currentRoute }}
-          </li>
-        </ol>
-      </nav>
+      <ul>
+        <li>
+          <a href="#" @click.prevent="onLogout">Log out</a>
+        </li>
+        <li>
+          <router-link to="/about">About</router-link>
+        </li>
+        <li>
+          <router-link to="/dashboard">Dashboard</router-link>
+        </li>
+      </ul>
     </div>
 
-    <main>
-      <router-view v-slot="{ Component }">
-        <transition name="fade" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
-    </main>
-	<AppFooter />
-    <!-- footer class="container mt-5 py-4 text-center text-muted border-top">
-      <small>
-        Vue {{ vueVersion }} • Environment: {{ environment }}
-        <span v-if="sessionStore.hasSession" class="ms-3">
-          Session: {{ sessionStore.sessionId.slice(0, 8) }}
-        </span>
-      </small>
-    </footer -->
+    <!-- PAGE CONTENT -->
+    <router-view />
   </div>
 </template>
 
-<script setup>
-import { computed } from 'vue';
-import { useRoute } from 'vue-router';
-import AppHeader from '@/components/layout/AppHeader.vue';
-import AppFooter from '@/components/layout/AppFooter.vue';
-import { version } from 'vue';
-import { useAuthStore } from '@/stores/auth';
-import { useSessionStore } from '@/stores/session';
+<script>
+import { useAuthStore } from '@/stores/auth'
+import auth from './auth'
 
-const route = useRoute();
-const authStore = useAuthStore();
-const sessionStore = useSessionStore();
-
-const vueVersion = version;
-const environment = import.meta.env.VITE_ENV || 'development';
-
-const currentRoute = computed(() => route.meta.title || route.name);
-const showBreadcrumb = computed(() => route.name !== 'Dashboard' && route.name !== 'NotFound');
+export default {
+  data () {
+    return {
+      loggedIn: auth.loggedIn()
+    }
+  },
+  created () {
+    auth.onChange = (loggedIn) => {
+      this.loggedIn = !!loggedIn
+    }
+  },
+  methods: {
+    onLogout () {
+      const authStore = useAuthStore()
+      authStore.logout()
+    }
+  }
+}
 </script>
 
 <style>
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  color: #2c3e50;
+}
+
 #app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #f8f9fa;
+  padding: 0 20px;
 }
 
-main {
-  flex: 1;
+ul {
+  line-height: 1.5em;
+  padding-left: 1.5em;
 }
 
-/* Page transition */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease;
+a {
+  color: #7f8c8d;
+  text-decoration: none;
 }
 
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* Breadcrumb styling */
-.breadcrumb {
-  background-color: white;
-  padding: 0.75rem 1rem;
-  border-radius: 0.25rem;
-  margin-bottom: 0;
+a:hover {
+  color: #4fc08d;
 }
 </style>

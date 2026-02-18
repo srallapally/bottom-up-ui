@@ -11,6 +11,7 @@ import { validateFile } from '@/services/csv';
 
 export const useSessionStore = defineStore('session', {
   state: () => ({
+    sessions: [],
     currentSession: null,  // { session_id, created_at, status }
     uploadedFiles: {
       identities: null,    // { filename, size, uploadedAt }
@@ -88,6 +89,35 @@ export const useSessionStore = defineStore('session', {
   },
 
   actions: {
+    /**
+     *
+     * Get existing sessions
+     */
+    async fetchSessions() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const data = await api.getSessions();
+        console.log('[Session] Sessions fetched:', data.sessions.length);
+        this.sessions = data.sessions || [];
+        return this.sessions;
+      } catch (error) {
+        this.error = error.userMessage || 'Failed to fetch sessions';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    selectSession(session) {
+      this.currentSession = {
+        session_id: session.id,
+        created_at: session.createdAt,
+        status: session.status
+      };
+    },
+
     /**
      * Create a new session
      * Returns session_id

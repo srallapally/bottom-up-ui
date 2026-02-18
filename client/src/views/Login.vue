@@ -1,35 +1,24 @@
 <template>
-  <div class="login-page">
-    <div id="ping-login-widget"></div>
+  <div>
+    <h2>Login</h2>
+    <p v-if="$route.query.redirect">
+      You need to login first.
+    </p>
+    <button type="button" @click="login">
+      Sign in with SSO
+    </button>
   </div>
 </template>
 
-<script setup>
-import { onMounted, onBeforeUnmount } from 'vue';
-import { widget } from '@forgerock/login-widget';
+<script>
+import auth from '../auth'
 
-let unsubscribe;
-
-onMounted(() => {
-  widget.mount('ping-login-widget');
-
-  // Start the configured journey (tree)
-  widget.start({
-    journey: import.meta.env.VITE_PING_JOURNEY_NAME, // e.g. BottomUpLogin
-  });
-
-  // Subscribe to widget events (login success, errors, etc.)
-  unsubscribe = widget.subscribe((event) => {
-    if (event.type === 'LoginSuccess') {
-      // At this point, Ping session exists; if you want OAuth tokens,
-      // trigger token acquisition via SDK flows (below).
-      window.location.href = '/';
+export default {
+  methods: {
+    login () {
+      // OIDC redirect (Authorization Code + PKCE). The provider handles the login UI.
+      return auth.login()
     }
-  });
-});
-
-onBeforeUnmount(() => {
-  if (unsubscribe) unsubscribe();
-  widget.unmount();
-});
+  }
+}
 </script>

@@ -1,90 +1,73 @@
-// client/src/stores/auth.js
-/**
- * Role Mining UI - Auth Store
- *
- * Manages authentication state (mock user for now)
- * Express auto-creates mock user session on /auth/session
- */
+import { defineStore } from 'pinia'
+import router from '@/router'
+import auth from '@/auth'
 
-import { defineStore } from 'pinia';
-import axios from 'axios';
+function getRedirectTarget () {
+    const q = router.currentRoute.value.query.redirect
+    return Array.isArray(q) ? (q[0] || '/dashboard') : (q || '/dashboard')
+}
+
+function redirectIfOnLogin () {
+    // Only redirect after login if we’re currently sitting on the login route.
+    if (router.currentRoute.value.path !== '/login') return
+
+    const target = getRedirectTarget()
+    // Avoid unnecessary replace
+    if (router.currentRoute.value.fullPath === target) return
+
+    router.replace(target)
+}
 
 export const useAuthStore = defineStore('auth', {
-  state: () => ({
-    user: null,           // { id, email, displayName }
-    authenticated: false,
-    miningSessionId: null, // Session ID from Express CSV tracker (survives refresh)
-    loading: false,
-    error: null
-  }),
+    state: () => ({
+        loggedIn: auth.loggedIn(),
+        profile: auth.getUserProfile ? auth.getUserProfile() : null
+    }),
 
-  getters: {
-    userName: (state) => state.user?.displayName || 'User',
-    userEmail: (state) => state.user?.email || '',
-    userId: (state) => state.user?.id || null,
-    isAuthenticated: (state) => state.authenticated
-  },
+    actions: {
+        async init () {
+            // Ensure GIS script is initialized if your auth.js exposes init()
+            if (typeof auth.init === 'function') {
+                await auth.init()
+            }
 
-  actions: {
-    /**
-     * Check session status
-     * Express auto-creates mock user if not exists
-     * Also returns miningSessionId if one exists in CSV tracker
-     */
-    async checkSession() {
-      this.loading = true;
-      this.error = null;
+            // Keep store state in sync with auth.js callbacks.
+            // NOTE: auth.js now replays current state when this is assigned.
+            auth.onChange = (isLoggedIn) => {
+                this.loggedIn = !!isLoggedIn
+                this.profile = auth.getUserProfile ? auth.getUserProfile() : null
 
-      try {
-        const response = await axios.get('/auth/session', {
-          withCredentials: true
-        });
+                if (this.loggedIn) {
+                    redirectIfOnLogin()
+                }
+            }
 
-        this.user = response.data.user;
-        this.authenticated = response.data.authenticated;
-        this.miningSessionId = response.data.miningSessionId || null;
+            // Initialize current state (for page refresh)
+            this.loggedIn = auth.loggedIn()
+            this.profile = auth.getUserProfile ? auth.getUserProfile() : null
 
-        console.log('[Auth] Session checked:', {
-          authenticated: this.authenticated,
-          userId: this.user?.id,
-          miningSessionId: this.miningSessionId
-        });
+            // If user is already logged in and on /login, go to redirect target.
+            if (this.loggedIn) {
+                redirectIfOnLogin()
+            }
+        },
 
-        return this.user;
-      } catch (error) {
-        this.error = error.userMessage || 'Failed to check session';
-        this.authenticated = false;
-        this.user = null;
-        this.miningSessionId = null;
-        throw error;
-      } finally {
-        this.loading = false;
-      }
-    },
+        async login () {
+            // With GIS renderButton flow, login() may be a no-op, but keep it for API symmetry.
+            if (typeof auth.login === 'function') {
+                await auth.login()
+            }
+        },
 
-    async logout() {
-      try {
-        await axios.get('/auth/logout', {
-          withCredentials: true
-        });
+        logout () {
+            auth.logout?.(() => {})
+            this.loggedIn = false
+            this.profile = null
 
-        this.user = null;
-        this.authenticated = false;
-        this.miningSessionId = null;
-
-        console.log('[Auth] User logged out');
-        return true;
-      } catch (error) {
-        this.error = error.userMessage || 'Logout failed';
-        throw error;
-      }
-    },
-
-    clearAuth() {
-      this.user = null;
-      this.authenticated = false;
-      this.miningSessionId = null;
-      this.error = null;
+            // Go back to login after logout
+            if (router.currentRoute.value.path !== '/login') {
+                router.replace('/login')
+            }
+        }
     }
-  }
-});
+})
