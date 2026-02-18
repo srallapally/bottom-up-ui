@@ -61,12 +61,12 @@ const InfoIconRenderer = (params) => {
   icon.style.color = '#0d6efd';
   icon.style.cursor = 'pointer';
   icon.title = 'View confidence breakdown';
-
+  
   icon.addEventListener('click', () => {
     selectedRow.value = params.data;
     drawerOpen.value = true;
   });
-
+  
   return icon;
 };
 
@@ -74,6 +74,13 @@ onMounted(async () => {
   try {
     const data = await api.browseData(sessionStore.sessionId, 'assignments');
     rows.value = data.rows;
+    
+    // Debug: Log what columns we have
+    console.log('Assignments columns:', data.columns);
+    console.log('Has confidence_level:', data.columns.includes('confidence_level'));
+    console.log('Has confidence:', data.columns.includes('confidence'));
+    
+    // Check if data has confidence scores - be more defensive
     hasConfidence.value = data.columns.includes('confidence_level')
         || data.columns.includes('confidence');
 

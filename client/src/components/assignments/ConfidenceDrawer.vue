@@ -9,122 +9,122 @@
     <!-- Drawer -->
     <Transition name="drawer">
       <div v-if="show" class="confidence-drawer">
-        <!-- Header -->
-        <div class="drawer-header">
-          <div>
-            <h5 class="mb-1">Confidence Breakdown</h5>
-            <div class="assignment-info">
-              <span class="badge bg-secondary">{{ data?.APP_ID }}</span>
-              <span class="mx-2">→</span>
-              <code class="text-muted">{{ data?.ENT_ID }}</code>
-              <span class="mx-2">for</span>
-              <strong>{{ data?.USR_ID }}</strong>
-            </div>
+      <!-- Header -->
+      <div class="drawer-header">
+        <div>
+          <h5 class="mb-1">Confidence Breakdown</h5>
+          <div class="assignment-info">
+            <span class="badge bg-secondary">{{ data?.APP_ID }}</span>
+            <span class="mx-2">→</span>
+            <code class="text-muted">{{ data?.ENT_ID }}</code>
+            <span class="mx-2">for</span>
+            <strong>{{ data?.USR_ID }}</strong>
           </div>
-          <button type="button" class="btn-close" @click="$emit('close')" aria-label="Close"></button>
+        </div>
+        <button type="button" class="btn-close" @click="$emit('close')" aria-label="Close"></button>
+      </div>
+
+      <!-- Content -->
+      <div class="drawer-content">
+        <!-- Justification -->
+        <div class="justification-section">
+          <div class="justification-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+              <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+            </svg>
+          </div>
+          <div class="justification-text">
+            {{ data?.justification || 'No justification available' }}
+          </div>
         </div>
 
-        <!-- Content -->
-        <div class="drawer-content">
-          <!-- Justification -->
-          <div class="justification-section">
-            <div class="justification-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
-              </svg>
-            </div>
-            <div class="justification-text">
-              {{ data?.justification || 'No justification available' }}
-            </div>
-          </div>
-
-          <!-- Confidence Breakdown -->
-          <div class="breakdown-section">
-            <h6 class="section-title">Confidence Score</h6>
-
-            <div class="breakdown-grid">
-              <!-- Overall Score -->
-              <div class="breakdown-item overall">
-                <div class="breakdown-label">Overall Confidence</div>
-                <div class="breakdown-value">
+        <!-- Confidence Breakdown -->
+        <div class="breakdown-section">
+          <h6 class="section-title">Confidence Score</h6>
+          
+          <div class="breakdown-grid">
+            <!-- Overall Score -->
+            <div class="breakdown-item overall">
+              <div class="breakdown-label">Overall Confidence</div>
+              <div class="breakdown-value">
                 <span class="confidence-badge" :class="confidenceLevelClass">
                   {{ data?.confidence_level || 'UNKNOWN' }}
                 </span>
-                  <span class="confidence-score">{{ formatPercent(data?.confidence) }}</span>
-                </div>
+                <span class="confidence-score">{{ formatPercent(data?.confidence) }}</span>
               </div>
+            </div>
 
-              <!-- Individual Factors -->
-              <div v-for="factor in factorScores" :key="factor.name" class="breakdown-item">
-                <div class="breakdown-label">
-                  {{ factor.label }}
-                  <span v-if="factor.weight" class="factor-weight">(weight: {{ formatPercent(factor.weight) }})</span>
-                  <span v-if="factor.value" class="attribute-value">= "{{ factor.value }}"</span>
+            <!-- Individual Factors -->
+            <div v-for="factor in factorScores" :key="factor.name" class="breakdown-item">
+              <div class="breakdown-label">
+                {{ factor.label }}
+                <span v-if="factor.weight" class="factor-weight">(weight: {{ formatPercent(factor.weight) }})</span>
+                <span v-if="factor.value" class="attribute-value">= "{{ factor.value }}"</span>
+              </div>
+              <div class="breakdown-value">
+                <div class="score-bar">
+                  <div class="score-fill" :style="{ width: formatPercent(factor.score) }"></div>
                 </div>
-                <div class="breakdown-value">
-                  <div class="score-bar">
-                    <div class="score-fill" :style="{ width: formatPercent(factor.score) }"></div>
-                  </div>
-                  <span class="score-text">{{ formatPercent(factor.score) }}</span>
-                </div>
+                <span class="score-text">{{ formatPercent(factor.score) }}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- Role & Tier Information -->
-          <div v-if="data?.matched_role_id || data?.entitlement_tier" class="role-section">
-            <h6 class="section-title">Role Information</h6>
-            <div class="role-grid">
-              <div v-if="data.entitlement_tier" class="role-item">
-                <span class="role-label">Tier:</span>
-                <span class="tier-badge" :class="tierClass">{{ formatTier(data.entitlement_tier) }}</span>
-              </div>
-              <div v-if="data.matched_role_id" class="role-item">
-                <span class="role-label">Matched Role:</span>
-                <span class="role-value">{{ data.matched_role_id }}</span>
-              </div>
-              <div v-if="data.cluster_size" class="role-item">
-                <span class="role-label">Peer Group Size:</span>
-                <span class="role-value">{{ data.cluster_size }} users</span>
-              </div>
-              <div v-if="data.peers_with_entitlement !== undefined" class="role-item">
-                <span class="role-label">Peers with Access:</span>
-                <span class="role-value">
-                {{ data.peers_with_entitlement }}
+        <!-- Role & Tier Information -->
+        <div v-if="data?.matched_role_id || data?.entitlement_tier" class="role-section">
+          <h6 class="section-title">Role Information</h6>
+          <div class="role-grid">
+            <div v-if="data.entitlement_tier" class="role-item">
+              <span class="role-label">Tier:</span>
+              <span class="tier-badge" :class="tierClass">{{ formatTier(data.entitlement_tier) }}</span>
+            </div>
+            <div v-if="data.matched_role_id" class="role-item">
+              <span class="role-label">Matched Role:</span>
+              <span class="role-value">{{ data.matched_role_id }}</span>
+            </div>
+            <div v-if="data.cluster_size" class="role-item">
+              <span class="role-label">Peer Group Size:</span>
+              <span class="role-value">{{ data.cluster_size }} users</span>
+            </div>
+            <div v-if="data.peers_with_entitlement !== undefined" class="role-item">
+              <span class="role-label">Peers with Access:</span>
+              <span class="role-value">
+                {{ data.peers_with_entitlement }} 
                 <span v-if="data.cluster_size" class="text-muted">
                   ({{ formatPercent(data.peers_with_entitlement / (data.cluster_size - 1)) }})
                 </span>
               </span>
-              </div>
-              <div v-if="peerUsers.length > 0" class="role-item full-width">
-                <span class="role-label">Peers in Role:</span>
-                <div class="peer-list">
-                <span
-                    v-for="peer in peerUsers.slice(0, showAllPeers ? peerUsers.length : 20)"
-                    :key="peer"
-                    class="peer-badge"
+            </div>
+            <div v-if="peerUsers.length > 0" class="role-item full-width">
+              <span class="role-label">Peers in Role:</span>
+              <div class="peer-list">
+                <span 
+                  v-for="peer in peerUsers.slice(0, showAllPeers ? peerUsers.length : 20)" 
+                  :key="peer"
+                  class="peer-badge"
                 >
                   {{ peer }}
                 </span>
-                  <button
-                      v-if="peerUsers.length > 20"
-                      class="btn btn-sm btn-link p-0 ms-2"
-                      @click="showAllPeers = !showAllPeers"
-                  >
-                    {{ showAllPeers ? 'Show less' : `Show all ${peerUsers.length}` }}
-                  </button>
-                </div>
+                <button 
+                  v-if="peerUsers.length > 20"
+                  class="btn btn-sm btn-link p-0 ms-2"
+                  @click="showAllPeers = !showAllPeers"
+                >
+                  {{ showAllPeers ? 'Show less' : `Show all ${peerUsers.length}` }}
+                </button>
               </div>
-              <div v-if="data.global_prevalence" class="role-item">
-                <span class="role-label">Global Prevalence:</span>
-                <span class="role-value">{{ formatPercent(data.global_prevalence) }}</span>
-              </div>
+            </div>
+            <div v-if="data.global_prevalence" class="role-item">
+              <span class="role-label">Global Prevalence:</span>
+              <span class="role-value">{{ formatPercent(data.global_prevalence) }}</span>
             </div>
           </div>
         </div>
       </div>
-    </Transition>
+    </div>
+  </Transition>
   </Teleport>
 </template>
 
@@ -157,8 +157,8 @@ const weightsUsed = computed(() => {
   if (!props.data?.weights_used) return {};
   try {
     const cleaned = props.data.weights_used
-        .replace(/'/g, '"')
-        .replace(/None/g, 'null');
+      .replace(/'/g, '"')
+      .replace(/None/g, 'null');
     return JSON.parse(cleaned);
   } catch (e) {
     return {};
@@ -168,9 +168,9 @@ const weightsUsed = computed(() => {
 // Extract factor scores from data
 const factorScores = computed(() => {
   if (!props.data) return [];
-
+  
   const factors = [];
-
+  
   // Peer group
   if (props.data.peer_group_score !== undefined && props.data.peer_group_score !== null) {
     factors.push({
@@ -180,20 +180,20 @@ const factorScores = computed(() => {
       weight: weightsUsed.value.peer_group
     });
   }
-
+  
   // User attributes - dynamically detect all _score columns
   // Exclude system scores (peer_group, role_coverage, drift_stability)
   const excludedScores = ['peer_group_score', 'role_coverage_score', 'drift_stability_score'];
-
+  
   for (const key in props.data) {
     if (key.endsWith('_score') && !excludedScores.includes(key)) {
       const score = props.data[key];
       if (score !== undefined && score !== null && score !== 0) {
         const attrName = key.replace('_score', '');
-
+        
         // Get the actual attribute value from the data
         const attrValue = props.data[attrName] || null;
-
+        
         factors.push({
           name: attrName,
           label: formatAttributeName(attrName),
@@ -204,7 +204,7 @@ const factorScores = computed(() => {
       }
     }
   }
-
+  
   // Role coverage
   if (props.data.role_coverage_score !== undefined && props.data.role_coverage_score !== null) {
     factors.push({
@@ -214,9 +214,9 @@ const factorScores = computed(() => {
       weight: weightsUsed.value.role_coverage
     });
   }
-
+  
   // Drift stability - HIDDEN as requested
-
+  
   return factors;
 });
 
@@ -244,9 +244,9 @@ const formatPercent = (value) => {
 
 const formatAttributeName = (name) => {
   return name
-      .split('_')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
 };
 
 const formatTier = (tier) => {
