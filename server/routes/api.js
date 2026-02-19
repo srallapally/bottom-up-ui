@@ -99,6 +99,8 @@ router.use(injectUserContext);
 router.use(createProxyMiddleware({
     target: config.flaskApiUrl,
     changeOrigin: true,
+    timeout: config.proxy.timeoutMs,
+    proxyTimeout: config.proxy.proxyTimeoutMs,
     pathRewrite: {
         '^/': '/api/' // Keep /api prefix
     },
