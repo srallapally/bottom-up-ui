@@ -19,15 +19,26 @@ const app = express();
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
-
+// ISSUE# 001 Remove hard-coded localhost origins/targets (CORS + Vite dev proxy)
 // CORS - Allow frontend origin
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: (origin, cb) => {
+        // Comma-separated allowlist via env: CORS_ORIGINS=https://ui.example.com,https://staging-ui.example.com
+        // Back-compat: CORS_ORIGIN may be a single origin.
+        const raw = process.env.CORS_ORIGINS || config.corsOrigin || '';
+        const allowlist = raw.split(',').map(s => s.trim()).filter(Boolean);
+
+        // Non-browser clients (no Origin header)
+        if (!origin) return cb(null, true);
+
+        if (allowlist.includes(origin)) return cb(null, true);
+        return cb(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-}))
-app.options(/.*/, cors())
+}));
+app.options(/.*/, cors());
 
 // Body parsing - skip for /api routes (proxied to Flask, need raw stream)
 app.use((req, res, next) => {
