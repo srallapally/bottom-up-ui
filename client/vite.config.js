@@ -1,40 +1,35 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { fileURLToPath, URL } from 'node:url';
 
-export default defineConfig({
-  plugins: [vue()],
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const bffUrl = env.VITE_BFF_URL || 'http://localhost:3000';
 
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    }
-  },
+  return {
+    plugins: [vue()],
 
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true
-      },
-      '/auth': {
-        target: 'http://localhost:3000',
-        changeOrigin: true
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
       }
     },
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
-    }
-  },
 
-  build: {
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'ag-grid': ['ag-grid-community', 'ag-grid-vue3']
+    server: {
+      port: Number(env.VITE_PORT || 5173),
+      proxy: {
+        '/api': {
+          target: bffUrl,
+          changeOrigin: true
+        },
+        '/auth': {
+          target: bffUrl,
+          changeOrigin: true
         }
+      },
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups'
       }
     }
-  }
+  };
 });
