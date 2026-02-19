@@ -4,6 +4,7 @@
  * Kept dependency-free to avoid introducing new npm packages in this repo.
  * Configure via:
  *  - NODE_ENV=production|development
+ *  Fixing merge mistake
  */
 module.exports = function securityHeaders() {
     return (req, res, next) => {

@@ -2,6 +2,7 @@
  * Role Mining UI - Express Application
  *
  * Configures middleware, session, passport, and routes
+ * Fixing merge mistake
  */
 
 const express = require('express');
