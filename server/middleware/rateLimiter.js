@@ -4,6 +4,7 @@
  * NOTE: In multi-instance deployments, use an edge/WAF limiter (e.g., Cloud Armor)
  * and/or a shared store (e.g., Redis). This limiter is still valuable as a per-instance
  * safety net and to reduce accidental abuse.
+ * This doesn't replace a real WAF, but it's a good first step.
  */
 function rateLimiter({ windowMs, max, keyGenerator }) {
     if (!windowMs || !max) {
