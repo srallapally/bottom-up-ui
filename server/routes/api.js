@@ -10,6 +10,7 @@ const axios = require('axios');
 const config = require('../config');
 const logger = require('../utils/logger');
 const sessionTracker = require('../services/sessionTracker');
+const verifyGoogleIdToken = require('../middleware/verifyGoogleIdToken');
 
 const router = express.Router();
 
@@ -17,25 +18,8 @@ const router = express.Router();
 // MIDDLEWARE: Require Authentication
 // ============================================================================
 
-function requireAuth(req, res, next) {
-    // Require a bearer token from the client (Google ID token)
-    const authHeader = req.headers.authorization || req.headers.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Missing bearer token' });
-    }
-
-    // Keep existing session.user shape for downstream code (sessionTracker + logs)
-    // Minimal: we don't verify token here; Flask does. This just ensures it exists.
-    if (!req.session.user) {
-        req.session.user = {
-            id: 'unknown',          // optional placeholder; not used for auth
-            email: 'unknown',       // optional placeholder
-            displayName: 'User'
-        };
-    }
-
-    next();
-}
+// Verify Google ID token and populate req.session.user
+const requireAuth = verifyGoogleIdToken;
 
 // ============================================================================
 // MIDDLEWARE: Inject User Context

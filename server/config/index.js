@@ -25,17 +25,25 @@ const config = {
     // CORS
     corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
 
+    // Google OIDC (GIS ID token)
+    google: {
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        hostedDomain: process.env.GOOGLE_HOSTED_DOMAIN, // optional, but recommended
+    },
+
     // Logging
     logLevel: process.env.LOG_LEVEL || 'info',
 };
 
 // Validation: Critical configs must be set
-const requiredEnvVars = [
-    'FLASK_API_URL',
-    'PING_ISSUER',
-    'PING_CLIENT_ID',
-    'SESSION_SECRET'
-];
+// NOTE: This repo currently supports either Ping OIDC or Google ID token auth.
+// If GOOGLE_CLIENT_ID is set, we validate Google settings and do NOT require Ping vars.
+// Otherwise, we keep the existing Ping-required behavior.
+const usingGoogle = !!process.env.GOOGLE_CLIENT_ID;
+
+const requiredEnvVars = usingGoogle
+    ? ['FLASK_API_URL', 'SESSION_SECRET', 'GOOGLE_CLIENT_ID']
+    : ['FLASK_API_URL', 'PING_ISSUER', 'PING_CLIENT_ID', 'SESSION_SECRET'];
 
 const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
 if (missingVars.length > 0) {
