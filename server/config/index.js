@@ -31,6 +31,13 @@ const config = {
         hostedDomain: process.env.GOOGLE_HOSTED_DOMAIN, // optional, but recommended
     },
 
+    // Proxy (Node -> Flask)
+    proxy: {
+        timeoutMs: parseInt(process.env.PROXY_TIMEOUT_MS || '30000', 10),
+        proxyTimeoutMs: parseInt(process.env.PROXY_TIMEOUT_MS || '30000', 10),
+    },
+
+
     // Logging
     logLevel: process.env.LOG_LEVEL || 'info',
 };
