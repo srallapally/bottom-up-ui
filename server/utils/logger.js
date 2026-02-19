@@ -2,12 +2,52 @@
 const winston = require('winston');
 const path = require('path');
 
+function redactSensitive(obj) {
+    if (!obj || typeof obj !== 'object') return obj;
+
+    if (Array.isArray(obj)) return obj.map(redactSensitive);
+
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+        const key = String(k).toLowerCase();
+
+        // Common sensitive keys
+        if (key.includes('authorization') || key.includes('cookie') || key.includes('set-cookie') || key.includes('token')) {
+            out[k] = '[REDACTED]';
+            continue;
+        }
+
+        out[k] = redactSensitive(v);
+    }
+    return out;
+}
+
+const redactFormat = winston.format((info) => {
+    // Redact known sensitive fields in meta payloads
+    const { ...copy } = info;
+
+    // Redact headers if present
+    if (copy.headers && typeof copy.headers === 'object') {
+        copy.headers = redactSensitive(copy.headers);
+    }
+
+    // Redact any nested structures
+    for (const k of Object.keys(copy)) {
+        if (k === 'level' || k === 'message' || k === 'timestamp') continue;
+        copy[k] = redactSensitive(copy[k]);
+    }
+
+    return copy;
+});
+
+
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: winston.format.combine(
         winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
         winston.format.errors({ stack: true }),
         winston.format.splat(),
+        redactFormat(),
         winston.format.json()
     ),
     defaultMeta: { service: 'role-mining-ui' },
