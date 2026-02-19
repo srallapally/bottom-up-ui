@@ -1,72 +1,64 @@
 <template>
   <div id="app">
-    <!-- NAV ONLY WHEN LOGGED IN -->
-    <div v-if="loggedIn">
-      <h1>Role Mining UI</h1>
 
-      <ul>
-        <li>
-          <a href="#" @click.prevent="onLogout">Log out</a>
-        </li>
-        <li>
-          <router-link to="/about">About</router-link>
-        </li>
-        <li>
-          <router-link to="/dashboard">Dashboard</router-link>
-        </li>
-      </ul>
-    </div>
+    <!-- Header (only when logged in) -->
+    <AppHeader
+        v-if="loggedIn"
+        @logout="handleLogout"
+    />
 
-    <!-- PAGE CONTENT -->
-    <router-view />
+    <!-- Page Content -->
+    <main class="app-content">
+      <router-view />
+    </main>
+
+    <AppFooter v-if="loggedIn" />
   </div>
 </template>
 
 <script>
-import { useAuthStore } from '@/stores/auth'
+import AppHeader from '@/components/layout/AppHeader.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import auth from './auth'
 
 export default {
-  data () {
-    return {
-      loggedIn: auth.loggedIn()
+  name: 'App',
+
+  components: {
+    AppHeader,
+    AppFooter
+  },
+
+  computed: {
+    loggedIn () {
+      return auth.loggedIn()
     }
   },
-  created () {
-    auth.onChange = (loggedIn) => {
-      this.loggedIn = !!loggedIn
+
+  watch: {
+    loggedIn: {
+      immediate: true,
+      handler (value) {
+        if (!value) {
+          this.$router.replace('/login')
+        }
+      }
     }
   },
+
   methods: {
-    onLogout () {
-      const authStore = useAuthStore()
-      authStore.logout()
+    handleLogout () {
+      auth.logout()
+      this.$router.replace('/login')
     }
   }
 }
 </script>
 
 <style>
-html, body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  color: #2c3e50;
-}
-
-#app {
-  padding: 0 20px;
-}
-
-ul {
-  line-height: 1.5em;
-  padding-left: 1.5em;
-}
-
-a {
-  color: #7f8c8d;
-  text-decoration: none;
-}
-
-a:hover {
-  color: #4fc08d;
+.app-content {
+  min-height: 100vh;
+  padding: 2rem 0;
+  background: #f9fafb;
 }
 </style>

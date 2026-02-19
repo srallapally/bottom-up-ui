@@ -45,7 +45,7 @@
           <div class="feature">
             <div class="dot"></div>
             <div>
-              <div class="featureTitle">Export & iterate</div>
+              <div class="featureTitle">Export &amp; iterate</div>
               <div class="featureDesc">Review candidates and refine before publishing.</div>
             </div>
           </div>
@@ -69,6 +69,7 @@
 import auth from '../auth'
 
 export default {
+  name: 'Login',
   data () {
     return {
       domainHint: import.meta.env.VITE_GOOGLE_HOSTED_DOMAIN || ''
@@ -77,23 +78,26 @@ export default {
   async mounted () {
     await auth.init()
 
-    window.google.accounts.id.renderButton(
-        document.getElementById('g_id_signin'),
-        {
-          theme: 'outline',
-          size: 'large',
-          text: 'signin_with',
-          shape: 'pill'
-        }
-    )
+    const el = document.getElementById('g_id_signin')
+    if (!el) return
+
+    // Render the Google Identity button
+    if (window.google?.accounts?.id?.renderButton) {
+      window.google.accounts.id.renderButton(el, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'pill'
+      })
+    }
   }
 }
 </script>
 
 <style scoped>
-/* Page */
+/* Full-viewport center */
 .page {
-  min-height: 80vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -102,7 +106,7 @@ export default {
       radial-gradient(900px 600px at 20% 15%, rgba(99, 102, 241, 0.16), transparent 55%),
       radial-gradient(800px 500px at 80% 25%, rgba(16, 185, 129, 0.14), transparent 55%),
       radial-gradient(900px 600px at 50% 95%, rgba(59, 130, 246, 0.10), transparent 60%),
-      #ffffff;
+      linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
 }
 
 .shell {
@@ -150,7 +154,7 @@ export default {
 
 /* Card */
 .card {
-  background: rgba(255, 255, 255, 0.80);
+  background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 18px;
   box-shadow:
@@ -158,7 +162,7 @@ export default {
       0 6px 18px rgba(17, 24, 39, 0.06);
   backdrop-filter: blur(10px);
   padding: 26px;
-  max-width: 620px;
+  max-width: 720px;
   margin: 0 auto;
 }
 
@@ -198,90 +202,76 @@ export default {
   padding: 4px 10px;
   border-radius: 999px;
   font-weight: 600;
+  background: rgba(243, 244, 246, 0.9);
+  border: 1px solid rgba(17, 24, 39, 0.10);
   color: #111827;
-  background: rgba(17, 24, 39, 0.06);
-  border: 1px solid rgba(17, 24, 39, 0.08);
 }
 
 /* Divider */
 .divider {
-  margin: 18px 0;
   height: 1px;
-  background: rgba(17, 24, 39, 0.08);
+  background: rgba(17, 24, 39, 0.10);
+  margin: 18px 0;
 }
 
-/* Features */
+/* Feature list */
 .features {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .feature {
-  display: grid;
-  grid-template-columns: 10px 1fr;
+  display: flex;
   gap: 10px;
-  align-items: start;
+  align-items: flex-start;
 }
 
 .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
+  width: 10px;
+  height: 10px;
   margin-top: 6px;
-  background: rgba(99, 102, 241, 0.70);
+  border-radius: 999px;
+  background: #0d6efd;
+  flex: 0 0 10px;
 }
 
 .featureTitle {
-  font-size: 14px;
   font-weight: 700;
   color: #111827;
+  font-size: 14px;
 }
 
 .featureDesc {
   margin-top: 2px;
-  font-size: 13px;
   color: rgba(17, 24, 39, 0.70);
+  font-size: 13px;
   line-height: 1.45;
 }
 
-/* Footer */
+/* Footer link */
 .footer {
   margin-top: 16px;
-  display: flex;
-  justify-content: flex-start;
 }
 
 .link {
-  color: #2563eb;
+  color: #0d6efd;
   text-decoration: none;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
 }
+
 .link:hover {
   text-decoration: underline;
 }
 
-/* Fineprint */
 .fineprint {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  font-size: 13px;
+  text-align: center;
   color: rgba(17, 24, 39, 0.60);
+  font-size: 13px;
 }
 
 .sep {
-  opacity: 0.6;
-}
-
-/* Responsive */
-@media (max-width: 520px) {
-  .card {
-    padding: 18px;
-    border-radius: 14px;
-  }
-  .cardHeader h1 {
-    font-size: 24px;
-  }
+  margin: 0 8px;
+  color: rgba(17, 24, 39, 0.35);
 }
 </style>

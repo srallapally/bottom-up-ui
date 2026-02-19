@@ -26,7 +26,7 @@
     </div>
 
     <!-- Current Session -->
-    <div v-else-if="sessionStore.hasSession" class="mb-4">
+    <div v-if="sessionStore.hasSession" class="mb-4">
       <h5 class="mb-3">Current Session</h5>
 
       <SessionCard
@@ -48,7 +48,7 @@
     </div>
 
     <!-- Sessions List / Loading / Empty -->
-    <div v-else class="py-2">
+    <div v-if="!resuming" class="py-2">
       <!-- Initial load guard: prevents empty-state flash -->
       <div v-if="!sessionsLoaded" class="text-center py-5">
         <div class="spinner-border text-primary mb-3" role="status"></div>
@@ -86,7 +86,7 @@
       </div>
 
       <!-- Empty state (only after sessionsLoaded=true) -->
-      <div v-else class="text-center py-5">
+      <div v-else-if="!sessionStore.hasSession" class="text-center py-5">
         <div class="empty-state">
           <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="text-muted mb-3" viewBox="0 0 16 16">
             <path d="M8 1a2.5 2.5 0 0 1 2.5 2.5V4h-5v-.5A2.5 2.5 0 0 1 8 1zm3.5 3v-.5a3.5 3.5 0 1 0-7 0V4H1v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4h-3.5zM2 5h12v9a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V5z"/>
@@ -229,7 +229,29 @@ const handleViewResults = () => {
   router.push('/results');
 };
 
-const handleReconfigure = () => {
+const handleReconfigure = async (sessionId) => {
+  // If user clicks "Reconfigure" from the sessions list, we must first hydrate
+  // the selected session into the stores (uploads/config/results flags).
+  if (sessionId) {
+    resuming.value = true;
+    try {
+      const { hasResults } = await sessionStore.resumeSession(sessionId);
+      authStore.miningSessionId = sessionId;
+
+      if (hasResults && !resultsStore.hasResults) {
+        try {
+          await resultsStore.loadResults(sessionId);
+        } catch (e) {
+          console.log('[Dashboard] Results exist but failed to load:', e);
+        }
+      }
+    } catch (e) {
+      console.error('[Dashboard] Failed to reconfigure session:', e);
+    } finally {
+      resuming.value = false;
+    }
+  }
+
   router.push('/configure');
 };
 

@@ -165,7 +165,7 @@ router.beforeEach(async (to, from, next) => {
   // 1. CHECK AUTHENTICATION
   // ============================================================================
   // Enforce auth for any route that declares meta.requiresAuth
-  if (to.meta.requiresAuth && !auth.loggedIn()) {
+  if (to.path !== '/login' && to.path !== '/about' && !auth.loggedIn()) {
     console.log('[Router] Not authenticated, redirecting to login');
     return next({
       path: '/login',

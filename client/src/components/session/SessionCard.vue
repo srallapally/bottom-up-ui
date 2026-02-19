@@ -128,7 +128,7 @@
         <button
             v-if="canViewResults"
             class="btn btn-outline-warning"
-            @click="$emit('reconfigure')"
+            @click="$emit('reconfigure', sessionId)"
         >
           Reconfigure
         </button>

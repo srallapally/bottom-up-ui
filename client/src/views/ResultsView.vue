@@ -6,9 +6,9 @@
       <div>
         <h2 class="mb-1">Mining Results</h2>
         <p class="text-muted mb-0">
-          {{ resultsStore.totalRoles }} roles discovered
-          <span v-if="resultsStore.miningDuration">
-            in {{ resultsStore.miningDuration }}s
+          {{ totalRolesForUi }} roles discovered
+          <span v-if="miningDurationForUi !== null">
+            in {{ miningDurationForUi }}s
           </span>
         </p>
       </div>
@@ -31,7 +31,7 @@
     </div>
 
     <!-- Summary cards -->
-    <SummaryCards :summary="resultsStore.summary" class="mb-3" />
+    <SummaryCards :summary="summaryForUi" class="mb-3" />
 
     <!-- Browse data cards -->
     <div class="row g-3 mb-4">
@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useResultsStore } from '@/stores/results';
 import { useSessionStore } from '@/stores/session';
@@ -103,6 +103,60 @@ const sessionStore = useSessionStore();
 
 const exporting = ref(false);
 const exportError = ref(null);
+
+/**
+ * Summary fields have shifted a few times (store vs backend keys).
+ * This normalizes the object passed to SummaryCards so the UI doesn't regress to zeros.
+ */
+const summaryForUi = computed(() => {
+  const s = resultsStore.summary || {};
+
+  const totalRoles =
+      (typeof s.total_roles === 'number' ? s.total_roles : null) ??
+      (Array.isArray(resultsStore.roles) ? resultsStore.roles.length : 0);
+
+  const totalUsers =
+      (typeof s.total_users === 'number' ? s.total_users : null) ??
+      (typeof sessionStore.totalUsers === 'number' ? sessionStore.totalUsers : 0);
+
+  const assignedUsers =
+      (typeof s.assigned_users === 'number' ? s.assigned_users : null) ??
+      (typeof s.users_assigned === 'number' ? s.users_assigned : null) ??
+      0;
+
+  const avgClustersPerUser =
+      (typeof s.avg_clusters_per_user === 'number' ? s.avg_clusters_per_user : null) ??
+      (typeof s.avg_roles_per_user === 'number' ? s.avg_roles_per_user : null) ??
+      0;
+
+  return {
+    ...s,
+    total_roles: totalRoles,
+    total_users: totalUsers,
+    assigned_users: assignedUsers,
+    avg_clusters_per_user: avgClustersPerUser
+  };
+});
+
+const totalRolesForUi = computed(() => summaryForUi.value.total_roles ?? 0);
+
+/**
+ * Avoid "in —" regression:
+ * - show duration only if we actually have one
+ * - prefer store timing, fallback to any backend-provided duration if present
+ */
+const miningDurationForUi = computed(() => {
+  if (typeof resultsStore.miningDuration === 'number') return resultsStore.miningDuration;
+
+  const s = resultsStore.summary || {};
+  const backendDuration =
+      s.mining_duration_seconds ??
+      s.duration_seconds ??
+      resultsStore.results?.mining_duration_seconds ??
+      resultsStore.results?.duration_seconds;
+
+  return typeof backendDuration === 'number' ? backendDuration : null;
+});
 
 const handleExport = async () => {
   exporting.value = true;

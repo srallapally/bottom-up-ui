@@ -54,7 +54,11 @@ api.interceptors.response.use(
 
       // Trigger toast notification
       showErrorToast(userMessage)
-
+    // Hard redirect on auth failure
+      if (error.response?.status === 401) {
+        auth.logout()
+        window.location.href = '/login'
+      }
       return Promise.reject(error)
     }
 )
@@ -250,8 +254,8 @@ const apiService = {
   },
 
   // Browse processed data
-  async browseData (sessionId, fileType) {
-    const { data } = await api.get(`/sessions/${sessionId}/browse/${fileType}`)
+  async browseData (sessionId, fileType, params = undefined) {
+    const { data } = await api.get(`/sessions/${sessionId}/browse/${fileType}`, params ? { params } : undefined)
     return data
   },
 

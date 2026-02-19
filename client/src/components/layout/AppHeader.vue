@@ -1,51 +1,93 @@
 <template>
-  <header class="bg-primary text-white py-3 mb-4">
-    <div class="container">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h1 class="h3 mb-0">
-            <router-link to="/dashboard" class="text-white text-decoration-none">
-              Role Mining UI
-            </router-link>
-          </h1>
-          <p class="mb-0 small">Hybrid Entitlement-Centric Role Discovery</p>
-        </div>
-        <div v-if="authStore.authenticated" class="text-end">
-          <small class="d-block">{{ authStore.userName }}</small>
-          <small class="text-white-50">{{ authStore.userEmail }}</small>
-          <button 
-            v-if="showLogout"
-            class="btn btn-sm btn-outline-light mt-2"
-            @click="handleLogout"
-          >
-            Logout
-          </button>
-        </div>
+  <header class="app-header">
+    <div class="container d-flex align-items-center justify-content-between py-2">
+
+      <!-- Left: Brand + Nav -->
+      <div class="d-flex align-items-center gap-4">
+        <router-link to="/dashboard" class="app-brand">
+          Role Mining
+        </router-link>
+
+        <nav class="app-nav">
+          <router-link to="/dashboard" class="nav-item">Dashboard</router-link>
+          <router-link to="/about" class="nav-item">About</router-link>
+        </nav>
       </div>
+
+      <!-- Right: Logout -->
+      <div class="d-flex align-items-center gap-2">
+        <button class="btn btn-sm btn-outline-secondary" @click="$emit('logout')">
+          Log out
+        </button>
+      </div>
+
     </div>
   </header>
 </template>
 
-<script setup>
-import { useAuthStore } from '@/stores/auth';
-
-defineProps({
-  showLogout: {
-    type: Boolean,
-    default: true
-  }
-});
-
-const authStore = useAuthStore();
-
-const handleLogout = () => {
-  // Logout will be handled by auth store action
-  authStore.logout();
-};
+<script>
+export default {
+  name: 'AppHeader',
+  emits: ['logout']
+}
 </script>
 
 <style scoped>
-header {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.app-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 0;
+}
+
+.app-brand {
+  font-weight: 700;
+  font-size: 1.15rem;
+  color: #111827;
+  text-decoration: none;
+  letter-spacing: -0.2px;
+}
+
+.app-nav {
+  display: flex;
+  gap: 1.25rem;
+  margin-left: 1.25rem;
+  align-items: center;
+}
+
+/* Force link look regardless of bootstrap defaults */
+.nav-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 8px;
+
+  font-size: 0.95rem;
+  font-weight: 500;
+
+  color: #6b7280 !important;
+  text-decoration: none !important;
+}
+
+/* spacing in case gap isn't honored for any reason */
+.nav-item + .nav-item {
+  margin-left: 0.75rem;
+}
+
+.nav-item:hover {
+  color: #111827 !important;
+  background: #f3f4f6;
+  text-decoration: none !important;
+}
+
+.nav-item.router-link-active {
+  color: #111827 !important;
+  background: #eef2ff;
+  font-weight: 600;
+  text-decoration: none !important;
+}
+
+button.btn {
+  border-radius: 10px;
+  font-weight: 500;
 }
 </style>

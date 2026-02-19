@@ -103,7 +103,18 @@ const auth = {
   },
 
   loggedIn () {
-    return !!this.getIdToken()
+    const token = this.getIdToken()
+    if (!token) return false
+
+    try {
+      const payload = decodeJwtPayload(token)
+      if (!payload?.exp) return false
+
+      const now = Math.floor(Date.now() / 1000)
+      return payload.exp > now
+    } catch (e) {
+      return false
+    }
   },
 
   // placeholder; real handler is installed via the setter below

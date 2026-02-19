@@ -178,13 +178,46 @@ export const useSessionStore = defineStore('session', {
           status: 'resumed'
         };
 
-        // Hydrate uploaded files from actual filesystem state
-        const uf = status.uploaded_files;
+        // Hydrate uploaded files with metadata from backend
+        const ufInfo = status.uploaded_files_info || {};
+
         this.uploadedFiles = {
-          identities: uf.identities ? { filename: 'identities.csv', resumedFromServer: true } : null,
-          assignments: uf.assignments ? { filename: 'assignments.csv', resumedFromServer: true } : null,
-          entitlements: uf.entitlements ? { filename: 'entitlements.csv', resumedFromServer: true } : null,
+          identities: ufInfo.identities?.present ? {
+            filename: ufInfo.identities.filename,
+            size: ufInfo.identities.size_bytes ?? null,
+            rowCount: ufInfo.identities.row_count ?? null,
+            resumedFromServer: true
+          } : null,
+
+          assignments: ufInfo.assignments?.present ? {
+            filename: ufInfo.assignments.filename,
+            size: ufInfo.assignments.size_bytes ?? null,
+            rowCount: ufInfo.assignments.row_count ?? null,
+            resumedFromServer: true
+          } : null,
+
+          entitlements: ufInfo.entitlements?.present ? {
+            filename: ufInfo.entitlements.filename,
+            size: ufInfo.entitlements.size_bytes ?? null,
+            rowCount: ufInfo.entitlements.row_count ?? null,
+            resumedFromServer: true
+          } : null,
         };
+
+        // Best-effort: hydrate identity column headers for re-configure screens.
+        // When resuming from the server we don't have the original File object, so
+        // client-side CSV validation can't provide columns. If processed identities
+        // exist, fetch columns from the processed CSV via /browse.
+        if (this.uploadedFiles.identities && status.has_processed && !this.uploadedFiles.identities.columns) {
+          try {
+            const identitiesBrowse = await api.browseData(sessionId, 'identities', { limit: 1, offset: 0 });
+            if (identitiesBrowse && Array.isArray(identitiesBrowse.columns)) {
+              this.uploadedFiles.identities.columns = identitiesBrowse.columns;
+            }
+          } catch (e) {
+            console.warn('[Session] Unable to hydrate identity columns during resume:', e);
+          }
+        }
 
         // Hydrate processed stats
         this.processedStats = status.stats || null;
@@ -199,7 +232,11 @@ export const useSessionStore = defineStore('session', {
         }
 
         console.log('[Session] Resume complete:', {
-          uploaded: { identities: uf.identities, assignments: uf.assignments, entitlements: uf.entitlements },
+          uploaded: {
+            identities: !!this.uploadedFiles.identities,
+            assignments: !!this.uploadedFiles.assignments,
+            entitlements: !!this.uploadedFiles.entitlements
+          },
           hasProcessed: status.has_processed,
           hasConfig: status.has_config,
           hasResults: status.has_results,
@@ -272,7 +309,7 @@ export const useSessionStore = defineStore('session', {
         formData.append('file_type', fileType);
 
         // Upload to backend
-        await api.uploadFiles(this.currentSession.session_id,formData);
+        await api.uploadFiles(this.currentSession.session_id, formData);
 
         // Track upload in state
         this.uploadedFiles[fileType] = {

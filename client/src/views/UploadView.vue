@@ -4,13 +4,13 @@
       <h2 class="mb-1">Upload Files</h2>
       <p class="text-muted mb-0">Upload identities, assignments, and entitlements CSV files</p>
     </div>
-    
+
     <!-- Progress Indicator -->
     <div class="upload-progress-header mb-4">
       <div class="progress-steps">
-        <div 
-          class="progress-step"
-          :class="{ 
+        <div
+            class="progress-step"
+            :class="{
             'step-active': currentStep === 1,
             'step-completed': sessionStore.hasIdentities
           }"
@@ -18,12 +18,12 @@
           <div class="step-number">1</div>
           <div class="step-label">Identities</div>
         </div>
-        
+
         <div class="step-connector" :class="{ 'connector-completed': sessionStore.hasIdentities }"></div>
-        
-        <div 
-          class="progress-step"
-          :class="{ 
+
+        <div
+            class="progress-step"
+            :class="{
             'step-active': currentStep === 2,
             'step-completed': sessionStore.hasAssignments
           }"
@@ -31,12 +31,12 @@
           <div class="step-number">2</div>
           <div class="step-label">Assignments</div>
         </div>
-        
+
         <div class="step-connector" :class="{ 'connector-completed': sessionStore.hasAssignments }"></div>
-        
-        <div 
-          class="progress-step"
-          :class="{ 
+
+        <div
+            class="progress-step"
+            :class="{
             'step-active': currentStep === 3,
             'step-completed': sessionStore.hasEntitlements
           }"
@@ -46,104 +46,104 @@
         </div>
       </div>
     </div>
-    
+
     <!-- Validation Errors -->
     <ValidationErrors
-      v-if="validationErrors.length > 0"
-      :errors="validationErrors"
-      title="File Validation Failed"
-      :summary="`Issues found in ${currentFileType} file:`"
-      @dismiss="validationErrors = []"
+        v-if="validationErrors.length > 0"
+        :errors="validationErrors"
+        title="File Validation Failed"
+        :summary="`Issues found in ${currentFileType} file:`"
+        @dismiss="validationErrors = []"
     />
-    
+
     <!-- Upload Section: Identities -->
     <div v-show="currentStep === 1" class="upload-step mb-4">
       <FileDropzone
-        title="Upload Identities"
-        file-type="identities"
-        help-text="CSV file with user identity data (user_id, department, job_title, etc.)"
-        :file="uploadedFiles.identities"
-        :is-uploading="uploadingFile === 'identities'"
-        :error-message="uploadError"
-        :row-count="uploadedFiles.identities?.rowCount"
-        @file-selected="(file) => handleFileSelected('identities', file)"
-        @file-removed="() => handleFileRemoved('identities')"
+          title="Upload Identities"
+          file-type="identities"
+          help-text="CSV file with user identity data (user_id, department, job_title, etc.)"
+          :file="identitiesFile"
+          :is-uploading="uploadingFile === 'identities'"
+          :error-message="uploadError"
+          :row-count="identitiesFile?.rowCount"
+          @file-selected="(file) => handleFileSelected('identities', file)"
+          @file-removed="() => handleFileRemoved('identities')"
       />
-      
+
       <div class="step-actions mt-3">
         <router-link to="/dashboard" class="btn btn-outline-secondary">
           Back to Dashboard
         </router-link>
-        
+
         <button
-          v-if="sessionStore.hasIdentities"
-          class="btn btn-primary"
-          @click="currentStep = 2"
+            v-if="sessionStore.hasIdentities"
+            class="btn btn-primary"
+            @click="currentStep = 2"
         >
           Next: Assignments
         </button>
       </div>
     </div>
-    
+
     <!-- Upload Section: Assignments -->
     <div v-show="currentStep === 2" class="upload-step mb-4">
       <FileDropzone
-        title="Upload Assignments"
-        file-type="assignments"
-        help-text="CSV file mapping users to entitlements (user_id, entitlement_id)"
-        :file="uploadedFiles.assignments"
-        :is-uploading="uploadingFile === 'assignments'"
-        :error-message="uploadError"
-        :row-count="uploadedFiles.assignments?.rowCount"
-        @file-selected="(file) => handleFileSelected('assignments', file)"
-        @file-removed="() => handleFileRemoved('assignments')"
+          title="Upload Assignments"
+          file-type="assignments"
+          help-text="CSV file mapping users to entitlements (user_id, entitlement_id)"
+          :file="assignmentsFile"
+          :is-uploading="uploadingFile === 'assignments'"
+          :error-message="uploadError"
+          :row-count="assignmentsFile?.rowCount"
+          @file-selected="(file) => handleFileSelected('assignments', file)"
+          @file-removed="() => handleFileRemoved('assignments')"
       />
-      
+
       <div class="step-actions mt-3">
         <button
-          class="btn btn-outline-secondary"
-          @click="currentStep = 1"
+            class="btn btn-outline-secondary"
+            @click="currentStep = 1"
         >
           Back: Identities
         </button>
-        
+
         <button
-          v-if="sessionStore.hasAssignments"
-          class="btn btn-primary"
-          @click="currentStep = 3"
+            v-if="sessionStore.hasAssignments"
+            class="btn btn-primary"
+            @click="currentStep = 3"
         >
           Next: Entitlements
         </button>
       </div>
     </div>
-    
+
     <!-- Upload Section: Entitlements -->
     <div v-show="currentStep === 3" class="upload-step mb-4">
       <FileDropzone
-        title="Upload Entitlements"
-        file-type="entitlements"
-        help-text="CSV file with entitlement metadata (entitlement_id, app_id, name, type)"
-        :file="uploadedFiles.entitlements"
-        :is-uploading="uploadingFile === 'entitlements'"
-        :error-message="uploadError"
-        :row-count="uploadedFiles.entitlements?.rowCount"
-        @file-selected="(file) => handleFileSelected('entitlements', file)"
-        @file-removed="() => handleFileRemoved('entitlements')"
+          title="Upload Entitlements"
+          file-type="entitlements"
+          help-text="CSV file with entitlement metadata (entitlement_id, app_id, name, type)"
+          :file="entitlementsFile"
+          :is-uploading="uploadingFile === 'entitlements'"
+          :error-message="uploadError"
+          :row-count="entitlementsFile?.rowCount"
+          @file-selected="(file) => handleFileSelected('entitlements', file)"
+          @file-removed="() => handleFileRemoved('entitlements')"
       />
-      
+
       <div class="step-actions mt-3">
         <button
-          class="btn btn-outline-secondary"
-          @click="currentStep = 2"
+            class="btn btn-outline-secondary"
+            @click="currentStep = 2"
         >
           Back: Assignments
         </button>
-        
+
         <button
-          v-if="sessionStore.allFilesUploaded"
-          class="btn btn-success"
-          @click="handleContinue"
-          :disabled="isProcessing"
+            v-if="sessionStore.allFilesUploaded"
+            class="btn btn-success"
+            @click="handleContinue"
+            :disabled="isProcessing"
         >
           <span v-if="isProcessing" class="spinner-border spinner-border-sm me-2" role="status">
             <span class="visually-hidden">Processing...</span>
@@ -152,47 +152,47 @@
         </button>
       </div>
     </div>
-    
+
     <!-- Upload Summary Card -->
     <div v-if="sessionStore.uploadedFileCount > 0" class="card">
       <div class="card-body">
         <h6 class="card-title">Upload Summary</h6>
-        
+
         <div class="table-responsive">
           <table class="table table-sm">
             <thead>
-              <tr>
-                <th>File Type</th>
-                <th>Filename</th>
-                <th>Rows</th>
-                <th>Size</th>
-                <th>Status</th>
-              </tr>
+            <tr>
+              <th>File Type</th>
+              <th>Filename</th>
+              <th>Rows</th>
+              <th>Size</th>
+              <th>Status</th>
+            </tr>
             </thead>
             <tbody>
-              <tr v-if="uploadedFiles.identities">
-                <td>Identities</td>
-                <td>{{ uploadedFiles.identities.filename }}</td>
-                <td>{{ formatNumber(uploadedFiles.identities.rowCount) }}</td>
-                <td>{{ formatFileSize(uploadedFiles.identities.size) }}</td>
-                <td><span class="badge bg-success">Uploaded</span></td>
-              </tr>
-              
-              <tr v-if="uploadedFiles.assignments">
-                <td>Assignments</td>
-                <td>{{ uploadedFiles.assignments.filename }}</td>
-                <td>{{ formatNumber(uploadedFiles.assignments.rowCount) }}</td>
-                <td>{{ formatFileSize(uploadedFiles.assignments.size) }}</td>
-                <td><span class="badge bg-success">Uploaded</span></td>
-              </tr>
-              
-              <tr v-if="uploadedFiles.entitlements">
-                <td>Entitlements</td>
-                <td>{{ uploadedFiles.entitlements.filename }}</td>
-                <td>{{ formatNumber(uploadedFiles.entitlements.rowCount) }}</td>
-                <td>{{ formatFileSize(uploadedFiles.entitlements.size) }}</td>
-                <td><span class="badge bg-success">Uploaded</span></td>
-              </tr>
+            <tr v-if="identitiesFile">
+              <td>Identities</td>
+              <td>{{ identitiesFile.filename }}</td>
+              <td>{{ formatNumber(identitiesFile.rowCount) }}</td>
+              <td>{{ formatFileSize(identitiesFile.size) }}</td>
+              <td><span class="badge bg-success">Uploaded</span></td>
+            </tr>
+
+            <tr v-if="assignmentsFile">
+              <td>Assignments</td>
+              <td>{{ assignmentsFile.filename }}</td>
+              <td>{{ formatNumber(assignmentsFile.rowCount) }}</td>
+              <td>{{ formatFileSize(assignmentsFile.size) }}</td>
+              <td><span class="badge bg-success">Uploaded</span></td>
+            </tr>
+
+            <tr v-if="entitlementsFile">
+              <td>Entitlements</td>
+              <td>{{ entitlementsFile.filename }}</td>
+              <td>{{ formatNumber(entitlementsFile.rowCount) }}</td>
+              <td>{{ formatFileSize(entitlementsFile.size) }}</td>
+              <td><span class="badge bg-success">Uploaded</span></td>
+            </tr>
             </tbody>
           </table>
         </div>
@@ -219,26 +219,50 @@ const validationErrors = ref([]);
 const currentFileType = ref('');
 const isProcessing = ref(false);
 
-// Track uploaded files locally for display
-const uploadedFiles = computed(() => sessionStore.uploadedFiles);
+const normalizeFile = (f) => {
+  if (!f) return null;
+  return {
+    ...f,
+    // Avoid "NaN undefined" when files were resumed from server without local metadata
+    rowCount: Number.isFinite(f.rowCount) ? f.rowCount : 0,
+    size: Number.isFinite(f.size) ? f.size : 0
+  };
+};
 
-// Determine initial step based on upload progress
-onMounted(() => {
-  if (!sessionStore.hasSession) {
-    router.push('/dashboard');
-    return;
-  }
-  
-  // Start at first incomplete step
+const identitiesFile = computed(() => normalizeFile(sessionStore.uploadedFiles.identities));
+const assignmentsFile = computed(() => normalizeFile(sessionStore.uploadedFiles.assignments));
+const entitlementsFile = computed(() => normalizeFile(sessionStore.uploadedFiles.entitlements));
+
+const setStepFromStore = () => {
   if (!sessionStore.hasIdentities) {
     currentStep.value = 1;
   } else if (!sessionStore.hasAssignments) {
     currentStep.value = 2;
-  } else if (!sessionStore.hasEntitlements) {
-    currentStep.value = 3;
   } else {
-    currentStep.value = 3; // All uploaded, stay on step 3
+    currentStep.value = 3;
   }
+};
+
+// Determine initial step based on upload progress
+onMounted(async () => {
+  if (!sessionStore.hasSession) {
+    router.push('/dashboard');
+    return;
+  }
+
+  // When returning from /configure (Cancel) or after refresh, re-check backend state
+  // so the store is hydrated with which files exist for this session.
+  try {
+    const sid = sessionStore.sessionId;
+    if (sid) {
+      await sessionStore.resumeSession(sid);
+    }
+  } catch (e) {
+    // Best-effort; UI can still render from whatever state we have locally
+    console.warn('[UploadView] resumeSession failed:', e);
+  }
+
+  setStepFromStore();
 });
 
 // File selection handler
@@ -247,10 +271,10 @@ const handleFileSelected = async (fileType, file) => {
   uploadError.value = '';
   validationErrors.value = [];
   currentFileType.value = fileType;
-  
+
   try {
     await sessionStore.uploadFile(fileType, file);
-    
+
     // Auto-advance to next step after successful upload
     if (fileType === 'identities') {
       currentStep.value = 2;
@@ -258,10 +282,9 @@ const handleFileSelected = async (fileType, file) => {
       currentStep.value = 3;
     }
     // Stay on step 3 if entitlements uploaded
-    
   } catch (error) {
     console.error(`Upload failed for ${fileType}:`, error);
-    
+
     // Extract validation errors if available
     if (error.message && error.message.includes('Validation failed:')) {
       const errorMsg = error.message.replace('Validation failed: ', '');
@@ -280,16 +303,17 @@ const handleFileRemoved = (fileType) => {
   sessionStore.uploadedFiles[fileType] = null;
   uploadError.value = '';
   validationErrors.value = [];
+  setStepFromStore();
 };
 
 // Continue to configure
 const handleContinue = async () => {
   isProcessing.value = true;
-  
+
   try {
     // Process files on backend (validates and loads into memory)
     await sessionStore.processFiles();
-    
+
     // Navigate to configure
     router.push('/configure');
   } catch (error) {
@@ -302,18 +326,18 @@ const handleContinue = async () => {
 
 // Formatters
 const formatNumber = (num) => {
-  if (num === null || num === undefined) return '0';
+  if (!Number.isFinite(num)) return '0';
   return num.toLocaleString();
 };
 
 const formatFileSize = (bytes) => {
-  if (!bytes) return '0 Bytes';
-  
+  if (!Number.isFinite(bytes) || bytes <= 0) return '0 Bytes';
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 };
 </script>
 
