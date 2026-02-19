@@ -3,7 +3,8 @@
  * Role Mining UI - Auth Routes
  *
  * Google login (GIS) is handled client-side.
- * Server-side authentication is enforced by verifying the Google ID token.
+ * The server establishes an authenticated session by verifying the Google ID token
+ * and then issuing an HttpOnly session cookie (BFF pattern).
  */
 
 const express = require('express');
@@ -15,29 +16,53 @@ const verifyGoogleIdToken = require('../middleware/verifyGoogleIdToken');
 const router = express.Router();
 
 // ============================================================================
-// LOGIN (Currently disabled - mock auth active)
+// LOGIN (Exchange Google ID token for a server session)
 // ============================================================================
 
-router.get('/login', (req, res) => {
-    // Login UI lives in the SPA
-    logger.info('Login requested');
-    res.redirect(`${config.corsOrigin}/login`);
-});
+router.post('/login', verifyGoogleIdToken, (req, res) => {
+    // verifyGoogleIdToken populates req.session.user
+    const user = req.session.user;
 
-// ============================================================================
-// CALLBACK (Currently disabled)
-// ============================================================================
+    // Rotate session id on login to reduce session fixation risk
+    req.session.regenerate((err) => {
+        if (err) {
+            logger.error('Session regenerate failed', { error: err.message });
+            return res.status(500).json({ error: 'Failed to create session' });
+        }
 
-router.get('/callback', (req, res) => {
-    // Not used for GIS button flow; kept for compatibility
-    logger.info('Callback hit');
-    res.redirect(`${config.corsOrigin}/dashboard`);
+        req.session.user = user;
+
+        logger.info('User logged in', { userId: user.id, email: user.email });
+        return res.json({
+            authenticated: true,
+            user: {
+                id: user.id,
+                email: user.email,
+                displayName: user.displayName
+            }
+        });
+    });
 });
 
 // ============================================================================
 // LOGOUT
 // ============================================================================
 
+router.post('/logout', (req, res) => {
+    const userId = req.session.user?.id;
+
+    req.session.destroy((err) => {
+        if (err) {
+            logger.error('Session destruction error', { error: err.message });
+            return res.status(500).json({ error: 'Failed to logout' });
+        }
+
+        logger.info('User logged out', { userId });
+        return res.json({ ok: true });
+    });
+});
+
+// Back-compat: keep GET /logout for older flows
 router.get('/logout', (req, res) => {
     const userId = req.session.user?.id;
 
@@ -56,7 +81,11 @@ router.get('/logout', (req, res) => {
 // SESSION INFO
 // ============================================================================
 
-router.get('/session', verifyGoogleIdToken, async (req, res) => {
+router.get('/session', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ authenticated: false });
+    }
+
     // Look up mining session from CSV tracker
     let miningSessionId = null;
     try {

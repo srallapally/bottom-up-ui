@@ -18,8 +18,11 @@ const router = express.Router();
 // MIDDLEWARE: Require Authentication
 // ============================================================================
 
-// Verify Google ID token and populate req.session.user
-const requireAuth = verifyGoogleIdToken;
+// Require an authenticated session; allow Bearer token as a fallback (creates a session).
+function requireAuth(req, res, next) {
+    if (req.session && req.session.user) return next();
+    return verifyGoogleIdToken(req, res, next);
+}
 
 // ============================================================================
 // MIDDLEWARE: Inject User Context

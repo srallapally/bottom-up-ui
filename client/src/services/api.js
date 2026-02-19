@@ -19,17 +19,8 @@ const api = axios.create({
 })
 
 // ============================================================================
-// REQUEST INTERCEPTOR - Auth header
+// REQUESTS use HttpOnly session cookies (withCredentials: true)
 // ============================================================================
-
-api.interceptors.request.use((config) => {
-  const token = auth.getIdToken?.()
-  if (token) {
-    config.headers = config.headers || {}
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
 
 // ============================================================================
 // RESPONSE INTERCEPTOR - Error Handling
@@ -54,7 +45,7 @@ api.interceptors.response.use(
 
       // Trigger toast notification
       showErrorToast(userMessage)
-    // Hard redirect on auth failure
+      // Hard redirect on auth failure
       if (error.response?.status === 401) {
         auth.logout()
         window.location.href = '/login'

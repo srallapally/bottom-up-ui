@@ -1,6 +1,5 @@
 // client/src/auth.js
 const GOOGLE_SCRIPT_SRC = 'https://accounts.google.com/gsi/client'
-const STORAGE_KEY = 'google_id_token'
 
 function loadGoogleScript () {
   return new Promise((resolve, reject) => {
@@ -24,7 +23,6 @@ function loadGoogleScript () {
 }
 
 function decodeJwtPayload (jwt) {
-  // JWT is header.payload.signature
   const parts = String(jwt || '').split('.')
   if (parts.length < 2) return null
   const payload = parts[1].replace(/-/g, '+').replace(/_/g, '/')
@@ -32,6 +30,19 @@ function decodeJwtPayload (jwt) {
       atob(payload).split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
   )
   return JSON.parse(json)
+}
+
+let _loggedIn = false
+let _profile = null
+
+async function fetchSession () {
+  try {
+    const resp = await fetch('/auth/session', { credentials: 'include' })
+    if (!resp.ok) return { authenticated: false }
+    return await resp.json()
+  } catch (e) {
+    return { authenticated: false }
+  }
 }
 
 const auth = {
@@ -42,100 +53,94 @@ const auth = {
       return
     }
 
+    // Restore session (cookie-based)
+    const session = await fetchSession()
+    _loggedIn = !!session.authenticated
+    _profile = session.user || null
+
     await loadGoogleScript()
 
-    // Initialize once
     if (!this._initialized) {
       window.google.accounts.id.initialize({
         client_id: clientId,
-        callback: (resp) => {
+        callback: async (resp) => {
           try {
             const idToken = resp?.credential
             if (!idToken) throw new Error('No credential returned')
 
+            // Optional client-side hosted-domain check (server enforces too)
             const payload = decodeJwtPayload(idToken)
             const allowedHd = import.meta.env.VITE_GOOGLE_HOSTED_DOMAIN // optional
             if (allowedHd && payload?.hd !== allowedHd) {
               console.error(`Blocked login: hd=${payload?.hd} expected ${allowedHd}`)
-              this.logout()
+              await this.logout()
               this.onChange(false)
               return
             }
 
-            sessionStorage.setItem(STORAGE_KEY, idToken)
+            // Exchange ID token for an HttpOnly session cookie
+            const r = await fetch('/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ idToken })
+            })
+
+            if (!r.ok) throw new Error('Login failed')
+            const body = await r.json()
+
+            _loggedIn = true
+            _profile = body.user || null
             this.onChange(true)
           } catch (e) {
             console.error(e)
-            this.logout()
+            await this.logout()
             this.onChange(false)
           }
         }
       })
       this._initialized = true
     }
+
+    // Replay current state for callers that set onChange after init
+    this.onChange(_loggedIn)
   },
 
   async login () {
     // no-op: login is initiated by the rendered GIS button
   },
 
-  getIdToken () {
-    return sessionStorage.getItem(STORAGE_KEY)
-  },
-
   getUserProfile () {
-    const token = this.getIdToken()
-    const payload = decodeJwtPayload(token)
-    if (!payload) return null
-    return {
-      email: payload.email,
-      name: payload.name,
-      picture: payload.picture,
-      hd: payload.hd,
-      sub: payload.sub
-    }
+    return _profile
   },
 
-  logout (cb) {
-    sessionStorage.removeItem(STORAGE_KEY)
+  async logout (cb) {
+    try {
+      await fetch('/auth/logout', { method: 'POST', credentials: 'include' })
+    } catch (e) {
+      // ignore
+    }
+
+    _loggedIn = false
+    _profile = null
     if (cb) cb()
     this.onChange(false)
   },
 
   loggedIn () {
-    const token = this.getIdToken()
-    if (!token) return false
-
-    try {
-      const payload = decodeJwtPayload(token)
-      if (!payload?.exp) return false
-
-      const now = Math.floor(Date.now() / 1000)
-      return payload.exp > now
-    } catch (e) {
-      return false
-    }
+    return !!_loggedIn
   },
 
-  // placeholder; real handler is installed via the setter below
   onChange () {}
 }
 
-// ---- FIX: make onChange assignment replay current state (eliminates race) ----
+// Keep setter behavior consistent with existing store usage
 let _onChange = () => {}
 Object.defineProperty(auth, 'onChange', {
-  get () {
-    return _onChange
-  },
+  get () { return _onChange },
   set (fn) {
     _onChange = (typeof fn === 'function') ? fn : () => {}
-
-    // Immediately replay current state so callers never miss a prior login.
-    try {
-      _onChange(auth.loggedIn())
-    } catch (e) {
-      console.error(e)
-    }
+    try { _onChange(auth.loggedIn()) } catch (e) { console.error(e) }
   }
 })
 

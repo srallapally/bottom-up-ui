@@ -62,14 +62,18 @@ async function verifyGoogleIdToken(idToken) {
 
 // Express middleware
 module.exports = async function verifyGoogleIdTokenMiddleware(req, res, next) {
+    // Prefer Authorization: Bearer <idToken>, but allow body.idToken for /auth/login exchange.
     const authHeader = req.headers.authorization || req.headers.Authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Missing bearer token' });
+    let idToken = null;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        idToken = authHeader.slice('Bearer '.length).trim();
+    } else if (req.body && typeof req.body.idToken === 'string') {
+        idToken = req.body.idToken.trim();
     }
 
-    const idToken = authHeader.slice('Bearer '.length).trim();
     if (!idToken) {
-        return res.status(401).json({ error: 'Missing bearer token' });
+        return res.status(401).json({ error: 'Missing ID token' });
     }
 
     try {
@@ -99,6 +103,6 @@ module.exports = async function verifyGoogleIdTokenMiddleware(req, res, next) {
             message: err.message,
             path: req.path
         });
-        return res.status(401).json({ error: 'Invalid bearer token' });
+        return res.status(401).json({ error: 'Invalid ID token' });
     }
 };
