@@ -9,6 +9,7 @@ const session = require('express-session');
 const cors = require('cors');
 const config = require('./config');
 const logger = require('./utils/logger');
+const rateLimiter = require('./middleware/rateLimiter');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -16,10 +17,19 @@ const apiRoutes = require('./routes/api');
 
 const app = express();
 
+// If running behind a reverse proxy / load balancer (common in GCP), enable this so req.ip is correct.
+if (process.env.TRUST_PROXY === '1') {
+    app.set('trust proxy', 1);
+}
+
+// Reduce fingerprinting
+app.disable('x-powered-by');
+
+
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
-// ISSUE# 001 Remove hard-coded localhost origins/targets (CORS + Vite dev proxy)
+
 // CORS - Allow frontend origin
 app.use(cors({
     origin: (origin, cb) => {
@@ -40,18 +50,30 @@ app.use(cors({
 }));
 app.options(/.*/, cors());
 
+
+// ============================================================================
+// RATE LIMITING (basic per-instance safety net)
+// ============================================================================
+
+const authRateLimitMaxPerMin = parseInt(process.env.AUTH_RATE_LIMIT_PER_MIN || '30', 10);
+const apiRateLimitMaxPerMin = parseInt(process.env.API_RATE_LIMIT_PER_MIN || '300', 10);
+
+app.use('/auth', rateLimiter({ windowMs: 60 * 1000, max: authRateLimitMaxPerMin }));
+app.use('/api', rateLimiter({ windowMs: 60 * 1000, max: apiRateLimitMaxPerMin }));
+
+
 // Body parsing - skip for /api routes (proxied to Flask, need raw stream)
 app.use((req, res, next) => {
     if (req.path.startsWith('/api')) {
         return next();
     }
-    express.json()(req, res, next);
+    express.json({ limit: process.env.REQUEST_BODY_LIMIT || '1mb' })(req, res, next);
 });
 app.use((req, res, next) => {
     if (req.path.startsWith('/api')) {
         return next();
     }
-    express.urlencoded({ extended: true })(req, res, next);
+    express.urlencoded({ extended: true, limit: process.env.REQUEST_BODY_LIMIT || '1mb' })(req, res, next);
 });
 
 // Request logging

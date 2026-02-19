@@ -16,7 +16,7 @@ async function startServer() {
 
         const port = config.port;
 
-        app.listen(port, () => {
+        const server = app.listen(port, () => {
             logger.info('🚀 Role Mining UI Server started');
             logger.info(`   Port: ${port}`);
             logger.info(`   Environment: ${config.nodeEnv}`);
@@ -27,7 +27,21 @@ async function startServer() {
             logger.info(`   - logs/combined.log (all logs)`);
             logger.info(`   - logs/error.log (errors only)`);
             logger.info('');
+
         });
+
+// ============================================================================
+// TIMEOUTS (reduce slowloris/connection hoarding)
+// ============================================================================
+
+        const headersTimeoutMs = parseInt(process.env.HEADERS_TIMEOUT_MS || '65000', 10);
+        const requestTimeoutMs = parseInt(process.env.REQUEST_TIMEOUT_MS || '60000', 10);
+        const keepAliveTimeoutMs = parseInt(process.env.KEEP_ALIVE_TIMEOUT_MS || '61000', 10);
+
+        server.headersTimeout = headersTimeoutMs;
+        server.requestTimeout = requestTimeoutMs;
+        server.keepAliveTimeout = keepAliveTimeoutMs;
+
     } catch (error) {
         logger.error('Failed to start server:', error);
         process.exit(1);
