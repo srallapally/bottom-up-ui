@@ -2,6 +2,7 @@
  * Role Mining UI - Express Application
  *
  * Configures middleware, session, passport, and routes
+ * Fixing merge mistake
  */
 
 const express = require('express');
@@ -10,6 +11,7 @@ const cors = require('cors');
 const config = require('./config');
 const logger = require('./utils/logger');
 const rateLimiter = require('./middleware/rateLimiter');
+const securityHeaders = require('./middleware/securityHeaders');
 
 // Route imports
 const authRoutes = require('./routes/auth');
@@ -24,6 +26,9 @@ if (process.env.TRUST_PROXY === '1') {
 
 // Reduce fingerprinting
 app.disable('x-powered-by');
+
+// Baseline security headers + CSP
+app.use(securityHeaders());
 
 
 // ============================================================================
