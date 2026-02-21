@@ -3,9 +3,25 @@
  *
  * Configures middleware, session, passport, and routes
  * Fixing merge mistake
+ *
+ * NOTE (surgical fix):
+ * - CORS is now applied ONLY to /auth and /api routes.
+ *   This prevents static asset requests (e.g., /assets/*.js) from being blocked in single-origin production mode.
+ * - Adds production static serving for built Vue SPA from server/client-dist (only when NODE_ENV=production).
+ *
+ * CSP Fix (surgical):
+ * - Google Identity Services loads a stylesheet from https://accounts.google.com/gsi/style
+ * - Our CSP (set by securityHeaders()) previously allowed only style-src 'self' 'unsafe-inline'
+ * - Patch style-src to also allow https://accounts.google.com
+ *
+ * SESSION STORE FIX (production-grade):
+ * - MemoryStore breaks on Cloud Run because instances don't share memory; requests can land on different instances.
+ * - If REDIS_URL is set, use Redis (Memorystore) as a shared session store.
+ * - If REDIS_URL is not set, fall back to MemoryStore (local dev).
  */
 
 const express = require('express');
+const path = require('path');
 const session = require('express-session');
 const cors = require('cors');
 const config = require('./config');
@@ -30,13 +46,43 @@ app.disable('x-powered-by');
 // Baseline security headers + CSP
 app.use(securityHeaders());
 
+// CSP patch: allow Google Identity Services stylesheet host.
+// This keeps the existing CSP intact and only adjusts style-src.
+app.use((req, res, next) => {
+    const csp = res.getHeader('Content-Security-Policy');
+    if (!csp) return next();
+
+    const cspStr = Array.isArray(csp) ? csp.join('; ') : String(csp);
+
+    // If style-src is already present, append accounts.google.com if missing.
+    // Otherwise, do nothing (securityHeaders() always sets it, but keep this safe).
+    const styleSrcRegex = /(?:^|;\s*)style-src\s+([^;]+)/i;
+    const match = cspStr.match(styleSrcRegex);
+
+    if (!match) return next();
+
+    const styleSrcValue = match[1] || '';
+    const alreadyAllowed = /\bhttps:\/\/accounts\.google\.com\b/i.test(styleSrcValue);
+    if (alreadyAllowed) return next();
+
+    // Append the required origin
+    const patched = cspStr.replace(styleSrcRegex, (full, value) => {
+        const trimmed = (value || '').trim();
+        return `; style-src ${trimmed} https://accounts.google.com`;
+    });
+
+    // Normalize possible leading semicolon introduced by replace
+    res.setHeader('Content-Security-Policy', patched.replace(/^;\s*/, ''));
+    next();
+});
+
 
 // ============================================================================
 // MIDDLEWARE
 // ============================================================================
 
-// CORS - Allow frontend origin
-app.use(cors({
+// CORS - Apply ONLY to /auth and /api (do NOT apply to static assets)
+const corsOptions = {
     origin: (origin, cb) => {
         // Comma-separated allowlist via env: CORS_ORIGINS=https://ui.example.com,https://staging-ui.example.com
         // Back-compat: CORS_ORIGIN may be a single origin.
@@ -52,8 +98,12 @@ app.use(cors({
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']
-}));
-app.options(/.*/, cors());
+};
+
+app.use('/auth', cors(corsOptions));
+app.use('/api', cors(corsOptions));
+app.options(/^\/auth\/.*/, cors(corsOptions));
+app.options(/^\/api\/.*/, cors(corsOptions));
 
 
 // ============================================================================
@@ -94,7 +144,38 @@ app.use((req, res, next) => {
 // SESSION
 // ============================================================================
 
+// Shared session store (Redis) when REDIS_URL is provided; MemoryStore otherwise (dev).
+let sessionStore = undefined;
+
+if (process.env.REDIS_URL) {
+    // Lazy-require so local dev doesn't need these deps installed unless you want them.
+    const { RedisStore } = require('connect-redis');
+    const { createClient } = require('redis');
+
+    const redisUrl = process.env.REDIS_URL;
+
+    const redisClient = createClient({ url: redisUrl });
+
+    redisClient.on('error', (err) => {
+        logger.error('Redis client error', { err: err?.message || err });
+    });
+
+    // Connect in the background. If it fails, hard-fail to avoid silent auth/session corruption.
+    redisClient.connect().then(() => {
+        logger.info('Connected to Redis for session store');
+    }).catch((err) => {
+        logger.error('Failed to connect to Redis (REDIS_URL)', { err: err?.message || err });
+        process.exit(1);
+    });
+
+    sessionStore = new RedisStore({ client: redisClient });
+    logger.info('Session store: Redis (REDIS_URL is set)');
+} else {
+    logger.info('Session store: MemoryStore (REDIS_URL not set)');
+}
+
 app.use(session({
+    store: sessionStore,
     secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
@@ -125,14 +206,36 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Root redirect
-app.get('/', (req, res) => {
-    if (req.isAuthenticated()) {
+// Root redirect (dev only)
+// In production, let the SPA static handler serve "/"
+app.get('/', (req, res, next) => {
+    if (config.nodeEnv === 'production') {
+        return next();
+    }
+
+    if (req.isAuthenticated && req.isAuthenticated()) {
         res.redirect('/dashboard');
     } else {
         res.redirect('/auth/login');
     }
 });
+
+// ============================================================================
+// STATIC UI (production only)
+// ============================================================================
+
+if (config.nodeEnv === 'production') {
+    // In the Docker image, copy client/dist -> server/client-dist
+    const staticDir = path.join(__dirname, 'client-dist');
+
+    // Serve built assets (e.g., /assets/*.js, /favicon.ico)
+    app.use(express.static(staticDir));
+
+    // SPA fallback: serve index.html for non-API/auth/health routes
+    app.get(/^\/(?!api\/|auth\/|health).*/, (req, res) => {
+        res.sendFile(path.join(staticDir, 'index.html'));
+    });
+}
 
 // ============================================================================
 // ERROR HANDLING

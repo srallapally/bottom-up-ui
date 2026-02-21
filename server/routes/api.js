@@ -112,7 +112,14 @@ router.use(createProxyMiddleware({
         if (authHeader) {
             proxyReq.setHeader('Authorization', authHeader);
         }
+        // Explicitly forward BFF identity headers
+        if (req.headers['x-user-id']) proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
+        if (req.headers['x-user-email']) proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
 
+        // Optional hardening to pair with Flask BFF_SHARED_SECRET
+        if (process.env.BFF_SHARED_SECRET) {
+            proxyReq.setHeader('x-bff-secret', process.env.BFF_SHARED_SECRET);
+        }
         logger.debug('Proxying request to Flask', {
             method: req.method,
             path: req.path,

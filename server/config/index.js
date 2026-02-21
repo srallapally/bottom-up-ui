@@ -9,13 +9,6 @@ const config = {
     // Flask Backend - NO HARDCODING
     flaskApiUrl: process.env.FLASK_API_URL,
 
-    // Ping OIDC
-    ping: {
-        issuer: process.env.PING_ISSUER,
-        clientId: process.env.PING_CLIENT_ID,
-        callbackUrl: process.env.PING_CALLBACK_URL,
-    },
-
     // Session
     session: {
         secret: process.env.SESSION_SECRET,

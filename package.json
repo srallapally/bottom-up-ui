@@ -27,6 +27,7 @@
   "dependencies": {
     "@okta/okta-auth-js": "^7.14.1",
     "axios": "^1.13.5",
+    "connect-redis": "^9.0.0",
     "cors": "^2.8.6",
     "csv-parser": "^3.2.0",
     "csv-writer": "^1.6.0",
@@ -37,9 +38,11 @@
     "passport": "^0.7.0",
     "passport-oauth2": "^1.6.1",
     "passport-openidconnect": "^0.1.2",
+    "redis": "^5.11.0",
     "winston": "^3.19.0"
   },
   "devDependencies": {
+    "@types/express-session": "^1.18.2",
     "concurrently": "^9.2.1",
     "eslint": "^10.0.0",
     "nodemon": "^3.1.11"

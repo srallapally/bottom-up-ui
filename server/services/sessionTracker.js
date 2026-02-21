@@ -6,25 +6,33 @@ const logger = require('../utils/logger');
 
 const SESSION_CSV_PATH = path.join(__dirname, '../../data/user-sessions.csv');
 
+const CSV_HEADERS = [
+    { id: 'user_id', title: 'user_id' },
+    { id: 'session_id', title: 'session_id' },
+    { id: 'created_at', title: 'created_at' },
+    { id: 'last_updated', title: 'last_updated' },
+    { id: 'status', title: 'status' },
+    { id: 'email', title: 'email' }
+];
+
 class SessionTracker {
     constructor() {
-        this.ensureCSVExists();
+        this.ensureStorageReady();
     }
 
-    ensureCSVExists() {
+    ensureStorageReady() {
+        // Ensure the parent directory exists (e.g., /app/data in Docker)
+        const dir = path.dirname(SESSION_CSV_PATH);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+            logger.info(`Created session storage directory: ${dir}`);
+        }
+
+        // Ensure CSV file exists (create with header row)
         if (!fs.existsSync(SESSION_CSV_PATH)) {
-            const csvWriter = createObjectCsvWriter({
-                path: SESSION_CSV_PATH,
-                header: [
-                    { id: 'user_id', title: 'user_id' },
-                    { id: 'session_id', title: 'session_id' },
-                    { id: 'created_at', title: 'created_at' },
-                    { id: 'last_updated', title: 'last_updated' },
-                    { id: 'status', title: 'status' },
-                    { id: 'email', title: 'email' }
-                ]
-            });
-            csvWriter.writeRecords([]);
+            // Create header line synchronously to avoid startup race/unhandled promise
+            const headerLine = CSV_HEADERS.map(h => h.title).join(',') + '\n';
+            fs.writeFileSync(SESSION_CSV_PATH, headerLine, { encoding: 'utf8' });
             logger.info('Created user-sessions.csv');
         }
     }
@@ -57,14 +65,7 @@ class SessionTracker {
 
         const csvWriter = createObjectCsvWriter({
             path: SESSION_CSV_PATH,
-            header: [
-                { id: 'user_id', title: 'user_id' },
-                { id: 'session_id', title: 'session_id' },
-                { id: 'created_at', title: 'created_at' },
-                { id: 'last_updated', title: 'last_updated' },
-                { id: 'status', title: 'status' },
-                { id: 'email', title: 'email' }
-            ],
+            header: CSV_HEADERS,
             append: true
         });
 
@@ -120,14 +121,7 @@ class SessionTracker {
     async writeAllRows(rows) {
         const csvWriter = createObjectCsvWriter({
             path: SESSION_CSV_PATH,
-            header: [
-                { id: 'user_id', title: 'user_id' },
-                { id: 'session_id', title: 'session_id' },
-                { id: 'created_at', title: 'created_at' },
-                { id: 'last_updated', title: 'last_updated' },
-                { id: 'status', title: 'status' },
-                { id: 'email', title: 'email' }
-            ]
+            header: CSV_HEADERS
         });
         await csvWriter.writeRecords(rows);
     }
