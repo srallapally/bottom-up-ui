@@ -52,7 +52,7 @@ const auth = {
       console.error('Missing VITE_GOOGLE_CLIENT_ID')
       return
     }
-
+    console.log('Initializing Google Sign-In...')
     // Restore session (cookie-based)
     const session = await fetchSession()
     _loggedIn = !!session.authenticated

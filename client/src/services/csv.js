@@ -12,7 +12,7 @@ import Papa from 'papaparse';
 // ============================================================================
 
 const REQUIRED_COLUMNS = {
-    identities: ['USR_ID', 'department', 'jobcode', 'location_country', 'manager'],
+    identities: ['USR_ID'],
     assignments: ['USR_ID', 'APP_ID', 'ENT_ID'],
     entitlements: ['APP_ID', 'ENT_ID', 'ENT_NAME']
 };

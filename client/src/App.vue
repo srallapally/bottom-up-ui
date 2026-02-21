@@ -1,6 +1,5 @@
 <template>
   <div id="app">
-
     <!-- Header (only when logged in) -->
     <AppHeader
         v-if="loggedIn"
@@ -19,20 +18,18 @@
 <script>
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import { mapState } from 'pinia'
+import { useAuthStore } from '@/stores/auth'
 import auth from './auth'
 
 export default {
   name: 'App',
 
-  components: {
-    AppHeader,
-    AppFooter
-  },
+  components: { AppHeader, AppFooter },
 
   computed: {
-    loggedIn () {
-      return auth.loggedIn()
-    }
+    // Prefer server-session-backed auth store, not legacy auth.loggedIn()
+    ...mapState(useAuthStore, ['loggedIn']),
   },
 
   watch: {

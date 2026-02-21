@@ -13,7 +13,7 @@ import auth from '@/auth'
 // ============================================================================
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL:'/api',
   timeout: 180000, // 3 minutes for mining operations
   withCredentials: true, // Include session cookies
 })

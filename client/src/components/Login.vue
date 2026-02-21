@@ -76,6 +76,14 @@ export default {
     }
   },
   async mounted () {
+    // IMPORTANT: set onChange before init so successful login redirects immediately
+    auth.onChange = (loggedIn) => {
+      if (loggedIn) {
+        const redirect = this.$route.query.redirect || '/'
+        this.$router.replace(redirect)
+      }
+    }
+
     await auth.init()
 
     const el = document.getElementById('g_id_signin')
@@ -199,40 +207,40 @@ export default {
 .pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 3px 10px;
   border-radius: 999px;
+  background: rgba(99, 102, 241, 0.10);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  color: rgba(17, 24, 39, 0.80);
   font-weight: 600;
-  background: rgba(243, 244, 246, 0.9);
-  border: 1px solid rgba(17, 24, 39, 0.10);
-  color: #111827;
 }
 
 /* Divider */
 .divider {
-  height: 1px;
-  background: rgba(17, 24, 39, 0.10);
   margin: 18px 0;
+  height: 1px;
+  background: rgba(17, 24, 39, 0.08);
 }
 
-/* Feature list */
+/* Features */
 .features {
   display: grid;
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .feature {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: flex-start;
 }
 
 .dot {
   width: 10px;
   height: 10px;
-  margin-top: 6px;
   border-radius: 999px;
-  background: #0d6efd;
-  flex: 0 0 10px;
+  margin-top: 6px;
+  background: rgba(99, 102, 241, 0.70);
 }
 
 .featureTitle {
@@ -242,28 +250,30 @@ export default {
 }
 
 .featureDesc {
-  margin-top: 2px;
   color: rgba(17, 24, 39, 0.70);
   font-size: 13px;
+  margin-top: 2px;
   line-height: 1.45;
 }
 
-/* Footer link */
+/* Footer */
 .footer {
-  margin-top: 16px;
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .link {
-  color: #0d6efd;
-  text-decoration: none;
-  font-weight: 600;
   font-size: 13px;
+  color: rgba(99, 102, 241, 0.95);
+  text-decoration: none;
 }
 
 .link:hover {
   text-decoration: underline;
 }
 
+/* Fineprint */
 .fineprint {
   text-align: center;
   color: rgba(17, 24, 39, 0.60);
@@ -272,6 +282,5 @@ export default {
 
 .sep {
   margin: 0 8px;
-  color: rgba(17, 24, 39, 0.35);
 }
 </style>

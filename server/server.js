@@ -14,7 +14,7 @@ async function startServer() {
         // Validate configuration before starting
         await validateConfiguration();
 
-        const port = config.port;
+        const port = parseInt(process.env.PORT || config.port || '8080', 10);
 
         const server = app.listen(port, () => {
             logger.info('🚀 Role Mining UI Server started');
