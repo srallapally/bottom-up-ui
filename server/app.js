@@ -113,7 +113,25 @@ app.options(/^\/api\/.*/, cors(corsOptions));
 const authRateLimitMaxPerMin = parseInt(process.env.AUTH_RATE_LIMIT_PER_MIN || '30', 10);
 const apiRateLimitMaxPerMin = parseInt(process.env.API_RATE_LIMIT_PER_MIN || '300', 10);
 
-app.use('/auth', rateLimiter({ windowMs: 60 * 1000, max: authRateLimitMaxPerMin }));
+const authLimiter = rateLimiter({ windowMs: 60 * 1000, max: authRateLimitMaxPerMin });
+
+app.use('/auth', (req, res, next) => {
+    const p = req.path || '';
+
+    // Exempt OAuth/session endpoints from throttling.
+    // Otherwise the UI can self-trigger 429s during login/session checks.
+    if (
+        p === '/login' ||
+        p === '/callback' ||
+        p === '/session' ||
+        p === '/logout'
+    ) {
+        return next();
+    }
+
+    return authLimiter(req, res, next);
+});
+
 app.use('/api', rateLimiter({ windowMs: 60 * 1000, max: apiRateLimitMaxPerMin }));
 
 

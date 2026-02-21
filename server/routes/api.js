@@ -30,10 +30,15 @@ function requireAuth(req, res, next) {
 
 function injectUserContext(req, res, next) {
     // Keep existing headers if other parts rely on them.
-    // NOTE: Auth is done via Authorization header passthrough.
+    // NOTE: Auth is done via Authorization header passthrough OR BFF headers.
     if (req.session.user) {
         req.headers['x-user-id'] = req.session.user.id;
         req.headers['x-user-email'] = req.session.user.email;
+
+        // Pair with Flask BFF_SHARED_SECRET enforcement.
+        if (process.env.BFF_SHARED_SECRET) {
+            req.headers['x-bff-secret'] = process.env.BFF_SHARED_SECRET;
+        }
 
         logger.debug('Injected user context', {
             userId: req.session.user.id,
@@ -106,20 +111,17 @@ router.use(createProxyMiddleware({
     },
 
     onProxyReq: (proxyReq, req, res) => {
-        // CRITICAL: Forward the Authorization header to Flask.
-        // Without this, Flask interceptor returns 401 "Missing bearer token".
+        // Forward Authorization when present (Bearer mode)
         const authHeader = req.headers.authorization || req.headers.Authorization;
         if (authHeader) {
             proxyReq.setHeader('Authorization', authHeader);
         }
-        // Explicitly forward BFF identity headers
+
+        // Forward BFF identity headers (BFF mode)
         if (req.headers['x-user-id']) proxyReq.setHeader('x-user-id', req.headers['x-user-id']);
         if (req.headers['x-user-email']) proxyReq.setHeader('x-user-email', req.headers['x-user-email']);
+        if (req.headers['x-bff-secret']) proxyReq.setHeader('x-bff-secret', req.headers['x-bff-secret']);
 
-        // Optional hardening to pair with Flask BFF_SHARED_SECRET
-        if (process.env.BFF_SHARED_SECRET) {
-            proxyReq.setHeader('x-bff-secret', process.env.BFF_SHARED_SECRET);
-        }
         logger.debug('Proxying request to Flask', {
             method: req.method,
             path: req.path,
